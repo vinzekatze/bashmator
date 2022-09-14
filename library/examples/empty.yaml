@@ -1,0 +1,8 @@
+info:
+author:
+tags:
+install:
+variables:
+shell: /bin/bash
+script: |-
+  echo 'do nothing'

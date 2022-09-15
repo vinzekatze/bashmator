@@ -6,15 +6,15 @@ import argparse
 import sys
 from bones.yamlscript import YamlScript
 from bones.library import Library
-from bones.funcs import make_table, tobase64, warning
+from bones.funcs import make_table, tobase64, warning, make_lines
 
-__version__ = "bashmator 0.1"
+__version__ = "bashmator 0.1.1"
 __mainlocation__ = os.path.dirname(os.path.realpath(__file__))
 __librarypath__ = os.path.join(__mainlocation__,'library')
+
+version_text = make_lines(f'{__version__} (https://github.com/VinzeKatze/bashmator)')
 __main_description__ = f'''
--------------------------------------------------------
-{__version__} (https://github.com/VinzeKatze/bashmator)
--------------------------------------------------------
+{version_text}
 
 Library path:
 {__librarypath__}
@@ -98,11 +98,12 @@ if __name__ == "__main__":
         coder_group = use_parcer.add_mutually_exclusive_group()
         coder_group.add_argument("-c","--code", dest="print", action="store_true", help="print script without execution")
         coder_group.add_argument("-b","--base64", action="store_true", help="print encoded in base64 script without execution")
+        
         use_parcer.add_argument("--shell", dest="run_shell", metavar="path", help="specify shell for script execution")
         # Группа логирования
         logger_group = use_parcer.add_argument_group('logging options')
-        logger_group.add_argument("-l","--log", metavar="file", help="log execution process to file (append mod)")
-        logger_group.add_argument("-s","--show-log", dest="show_log", action="store_true", help="print log headers")
+        logger_group.add_argument("-o","--out", dest="log", metavar="file", help="log execution process to file (append mod)")
+        logger_group.add_argument("-l","--log-headers", dest="show_log", action="store_true", help="print log headers")
         use_parcer.set_defaults(func=command_use)
         
         # Субпарсер для update

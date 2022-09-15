@@ -156,7 +156,7 @@ class YamlScript:
                         logfile.close()
                         try:
                             proc.terminate()
-                        except:
+                        except UnboundLocalError:
                             pass             
             else:
                 if args.show_log:

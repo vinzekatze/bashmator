@@ -31,6 +31,12 @@ def make_table(data: list):
     out = tabulate(formated_data, headers="firstrow", tablefmt="presto")
     return out
 
+def make_lines(text):
+    s1 = '-' * len(text) + '\n'
+    s2 = text + '\n'
+    s3 = s1
+    return (s1+s2+s3)
+
 def get_local_time():
     now = datetime.datetime.now()
     form_now = now.strftime("%Y-%m-%d %H:%M:%S")

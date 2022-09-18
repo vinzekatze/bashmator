@@ -49,7 +49,7 @@ class Library:
                 self.data.update({key:{}})
                 script = YamlScript(self.files[key]['path'],key)
                 self.data[key]['path'] = self.files[key]['path']
-                self.data[key]['info'] = script.info
+                self.data[key]['description'] = script.description
                 self.data[key]['author'] = script.author
                 self.data[key]['tags'] = script.tags
                 self.data[key]['shell'] = script.shell

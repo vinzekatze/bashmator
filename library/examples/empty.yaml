@@ -1,8 +1,15 @@
-info:
+description:
 author:
 tags:
 install:
-variables:
+arguments:
+  var1:
+    default:
+    replacer: __RPL__
+    description:
 shell: /bin/bash
-script: |-
-  echo 'do nothing'
+script:
+#item_1:
+#  description:
+#  script:
+

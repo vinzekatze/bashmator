@@ -38,10 +38,9 @@ def make_lines(text):
     return (s1+s2+s3)
 
 def get_local_time():
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     form_now = now.strftime("%Y-%m-%d %H:%M:%S")
-    local_now = now.astimezone()
-    local_tz = local_now.tzname()
+    local_tz = datetime.timezone.utc
     out=f'{form_now} ({local_tz})'
     return(out)
 
@@ -72,3 +71,20 @@ def get_log_end(time):
     s2 = f'+ End time:                  {time}\n'
     s3 = style_line
     return("\n"+s1+s2+s3+"\n")
+
+def make_range(input):
+    result = []
+    for part in input.split(','):
+        if '-' in part:
+            a, b = part.split('-')
+            a, b = int(a), int(b)
+            if a < b:
+                result.extend(range(a, b + 1))
+            if a > b:
+                result.extend(reversed(range(b, a + 1)))
+            if a == b:
+                result.extend([a])
+        else:
+            a = int(part)
+            result.append(a)
+    return result

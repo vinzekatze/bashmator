@@ -1,0 +1,31 @@
+description: |-
+  Stupid python calc.
+author: vinzekatze
+tags:
+  - help
+  - example
+install: >-
+  No installation needed
+arguments:
+  x:
+    default:
+    replacer: _X_
+    description: argument number 1 (int)
+  operation:
+    default: # If list, argument is positional with choise
+      - '+'
+      - '-'
+      - '*'
+      - '/'
+    replacer: _OPER_
+    description: arithmetic operator 
+  y:
+    default:
+    replacer: _Y_
+    description: argument number 2 (int)
+shell: python3 # Lol. You can try something other than bash
+script: |- 
+  x = int('_X_')
+  y = int('_Y_')
+  result = x _OPER_ y
+  print(result)

@@ -1,0 +1,25 @@
+description: |-
+  Prints 'Hello World' as much as needed.
+author: vinzekatze
+tags:
+  - help
+  - example
+install: >-
+  No installation needed
+arguments:
+  count:
+    default: # If empty, argument is positional
+    replacer: __COUNT__
+    description: number of repetitions. must be int.
+  t:
+    default: 'Hello World' # If not empty, argument is optional
+    replacer: --TEXT--
+    description: phrase to repeat. default is 'Hello World'
+shell: /bin/bash
+script: |- 
+  phrase='--TEXT--'
+  ans=$(echo $phrase | cut -d ' ' -f 1)
+  for i in $(seq 1 __COUNT__); do
+    echo '--TEXT--!'
+    echo -e "...$ans, $(whoami)\n"
+  done

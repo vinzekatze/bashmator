@@ -1,0 +1,43 @@
+description: >-
+  Useless script with a set of file operations
+author: vinzekatze
+tags:
+  - example
+  - help
+install: >-
+  No installation needed
+arguments:
+  file:
+    default:
+    replacer: __PATH__
+    description: path to file
+shell: /bin/bash
+script: # if there is a script here, it will become the default item.
+item_1:
+  description: get file stat
+  script: |-
+    echo '-------------'
+    echo '- FILE STAT:'
+    echo '-------------'
+    stat __PATH__
+item_2:
+  description: get md5 hash
+  script: |-
+    echo '-------------'
+    echo '- MD5 HASH:'
+    echo '-------------'
+    md5sum __PATH__
+item_3:
+  description: read file
+  script: |-
+    echo '-------------'
+    echo '- FILE CAT:'
+    echo '-------------'
+    cat __PATH__
+item_4:
+  description: encode file to base64
+  script: |-
+    echo '-------------'
+    echo '- BASE64:'
+    echo '-------------'
+    base64 __PATH__

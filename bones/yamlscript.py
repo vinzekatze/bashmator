@@ -94,11 +94,11 @@ class YamlScript:
                     # Добавление аргументов для items
                     if self.items:
                         items_g = self.parser.add_argument_group('items options')
-                        items_g.add_argument('--seq', 
+                        items_g.add_argument('--item', 
                             default='0', 
-                            metavar='range',
+                            metavar='NUM',
                             dest='items_launch_set', 
-                            help='execution sequence of item scripts (ex: \'1,2,4-6\')',
+                            help='item index to execute (can be a sequence, ex: \'1,2,4-6\')',
                             required=not self.script)
                     
                     #  Добавление общих аргументов

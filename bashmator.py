@@ -8,7 +8,7 @@ from bones.yamlscript import YamlScript
 from bones.library import Library
 from bones.funcs import make_table, tobase64, warning, make_lines
 
-__version__ = "bashmator 0.2.1"
+__version__ = "bashmator 0.2.2"
 __mainlocation__ = os.path.dirname(os.path.realpath(__file__))
 __librarypath__ = os.path.join(__mainlocation__,'library')
 

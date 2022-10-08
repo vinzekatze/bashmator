@@ -16,8 +16,7 @@ class Library:
             # Внедрю, если возникнут проблемы с текущим решением.
             with open(self.jsonpath, mode='r', encoding='utf-8') as json_file:
                 self.data = json.load(json_file)
-        except Exception as errormsg:
-            warning('Can\'t load script library', errormsg)
+        except:
             self.data = {}
     
     def FileSearch(self):
@@ -65,7 +64,7 @@ class Library:
         for line in self.data.items():
             string = line[0]
             for value in keys:
-                if value == 'tags': string += ' ' +' '.join(line[1].get(value, ''))
+                if value == 'tags': string += ' ' + ' '.join(line[1].get(value, ''))
                 else: string += ' ' + line[1].get(value, '')
             entrycount=0
             for word in words:

@@ -48,10 +48,10 @@ class YamlScript:
                 self.status = 'ERROR'
             else:
                 # Считывание данных
-                self.author =  content.get('author', '')
-                self.description = content.get('description','')
-                self.install = content.get('install','')
-                self.shell = content.get('shell','') 
+                self.author =  NoneControll(content.get('author', '')) 
+                self.description = NoneControll(content.get('description',''))
+                self.install = NoneControll(content.get('install',''))
+                self.shell = NoneControll(content.get('shell',''))
                 if content.get('tags',[]):
                     self.tags = [str(tag) for tag in content.get('tags',[])]
                 if content.get('arguments',[]):
@@ -154,11 +154,11 @@ class YamlScript:
                 out = out.replace(self.arguments[key]['replacer'], str(vars(self.args)[key]))
             return out
     
-    def Execute(self, shell, script, __version__, args):
+    def Execute(self, shell, script, __version__, args, item):
         if self.status == 'OK':
             if args.show_log:
                 # создание заголовков логгера
-                headerstr = get_main_header(__version__,self.name,get_local_time(),shell)
+                headerstr = get_main_header(__version__,self.name,get_local_time(),shell, item)
                 headerstr += get_code_log(script)
                 headerstr += get_log_header()
                 print(headerstr, end='')
@@ -173,11 +173,11 @@ class YamlScript:
                     endstr = get_log_end(get_local_time())
                     print(endstr, end='')
     
-    def Execute_log(self, shell, script, __version__, args):
+    def Execute_log(self, shell, script, __version__, args, item):
         if self.status == 'OK':
             used_encoding=sys.stdout.encoding
             # создание заголовков логгера
-            headerstr = get_main_header(__version__,self.name,get_local_time(),shell)
+            headerstr = get_main_header(__version__,self.name,get_local_time(),shell, item)
             headerstr += get_code_log(script)
             headerstr += get_log_header()
             try:

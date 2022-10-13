@@ -1,4 +1,4 @@
-# Bashmator - script manger / one-liner manager
+# Bashmator - script manager / one-liner manager
 > One Tool to rule them all, One Tool to find them,  
 > One Tool to log them all, and in the CLI bind them ...
 
@@ -176,7 +176,7 @@ script: |-
 #### Arguments
 В зависимости от значения ключа `default` bashmator будет генерировать аргументы с разными свойствами:
 - если `default` пуст, будет сгенерирован обязательный позиционный аргумент;
-- если `default` имеет одно значение, будет сгенерирована опция со значеним по умолчанию;
+- если `default` имеет одно значение, будет сгенерирована опция со значением по умолчанию;
 - если `default` - список значений, будет сгеренирован обязательный позиционный аргумент с ограниченным выбором значений.
 
 ##### Пример 1

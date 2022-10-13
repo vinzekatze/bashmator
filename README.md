@@ -1,4 +1,4 @@
-# Bashmator - script and one-liner manager
+# Bashmator - script manger / one-liner manager
 > One Tool to rule them all, One Tool to find them,  
 > One Tool to log them all, and in the CLI bind them ...
 

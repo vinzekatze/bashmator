@@ -1,0 +1,53 @@
+author: demo
+description: |-
+  To make the argument multiple, add the "multiple: true" key. 
+  The properties of multiple arguments are specified with the "mode" key (by default, the values are joined with a space)
+
+  For a better understanding of what is going on it is recommended to look at the file "bashmator/library/modules/examples/4_multiple.yaml".
+tags:
+  - help
+  - manual
+  - multiple
+  - mode
+install: >-
+  # No installations is needed
+
+arguments:
+  
+  loop-arg:
+    replacer: __LOOP-ARG__
+    multiple: true
+    description: |-
+      The argument specified in the "mode: loop:" key will initiate the launch of the script for each value
+  
+  join-arg-1:
+    default: SOME-DEFALUT-VALUE
+    replacer: __JOIN-ARG-2__
+    multiple: true
+    description: |-
+      In the "mode: join: <arg-name>:" key you can set the separator for multiple argument (here is ", ")
+
+  join-arg-2:
+    default:
+      -
+    replacer: __JOIN-ARG-3__
+    multiple: true
+    description: |-
+      empty by default (separator is ";")
+
+
+mode:
+  loop: loop-arg
+  join:
+    join-arg-1: ", "
+    join-arg-2: ''
+
+
+shell: bash
+script: |-
+  echo "New start of the script ($(date))"
+  echo "loop-arg    : __LOOP-ARG__"
+  echo "join-arg-1  : __JOIN-ARG-2__"
+  echo "join-arg-2  : __JOIN-ARG-3__"
+  echo
+  sleep 1

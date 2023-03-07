@@ -1,0 +1,41 @@
+author: demo
+description: |-
+  With the "mode: format: <arg-name>" key you can specify the formatting for each value of the argument with the python function ".format()". 
+
+  This is usually used to correctly insert argument values into loops using the '{0!r}' pattern. To see the effect of this on your code use the "bashmator use -c ...".
+
+  By default the formatting is not used. Also, formatting does not apply to empty arguments.
+
+  For a better understanding of what is going on it is recommended to look at the file "bashmator/library/modules/examples/5_format.yaml".
+tags:
+  - help
+  - manual
+  - multiple
+  - mode
+install: >-
+  # No installations is needed
+
+arguments:
+  a:
+    default:
+      -
+    replacer: __A__
+    description: single argument with an empty default value
+
+  some-argument:
+    replacer: __B__
+    multiple: true
+    description: multiple argument
+
+
+mode:
+  format:
+    some-argument: '{0!r}'
+    a: |-
+      value of \"a\" is \"{0}\"\\n
+
+
+shell: bash
+script: |-
+  echo -ne __A__
+  echo value of \"b\" is \"__B__\"

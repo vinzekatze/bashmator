@@ -1,184 +1,340 @@
 #!/usr/bin/env python3
 # vinzekatze was here
 
-from genericpath import isdir
 import os.path
 import argparse
-from sys import version_info
+#from sys import version_info
+from appdirs import user_config_dir
+from colorama import deinit as colorama_deinit
+from colorama import just_fix_windows_console
 
 from bones.yamlscript import YamlScript
 from bones.library import Library
-from bones.funcs import error, make_table, warning, make_lines #, tobase64
-from bones.config import ConfigFile
+from bones.config import Configuration
 
-__version__ = "bashmator 0.3.3"
-__mainlocation__ = os.path.dirname(os.path.realpath(__file__))
-ConfigFile = ConfigFile(__mainlocation__)
+__version__ = "1.0.0"
+__programm_location__ = os.path.dirname(os.path.realpath(__file__))
+__default_lib_path__ = os.path.join(__programm_location__,'library')
+__config_location__ = user_config_dir('bashmator')
 
-version_text = make_lines(f'--- {__version__} (https://github.com/VinzeKatze/bashmator) ---')
+settings_json = Configuration(__config_location__, __default_lib_path__)
+msg = settings_json.msg
+
+if settings_json.color:
+    just_fix_windows_console()
+
+logoart = msg.get_logo_art(__version__)
+style_line2 = msg.gen_color_style_line(65)
+used_library_with_status = settings_json.used_library if settings_json.used_library_status else f'{settings_json.used_library} {msg.c("[ERROR]","R")}'
 __main_description__ = f'''
-{version_text}
+{logoart}
+{style_line2}
 
-Library path:
-{ConfigFile.CONF_Library_Path}
+{msg.c('used library:','_B')} {used_library_with_status}
 '''
+
 
 # Команда use
 def command_use(allargs):
-    if ConfigFile.CONF_Library_autoupdate:
-        mainlib.FileSearch()
-        mainlib.CheckChanges()
-        mainlib.Update()
+    mainlib = Library(path=settings_json.used_library_path, 
+                      msg=settings_json.msg, 
+                      folder_status=settings_json.used_library_status,
+                      known_shells=settings_json.shell_dict) # Загрузка 'library.json'
+    if settings_json.auto_scan:
+        mainlib.file_search()
+        mainlib.check_changes()
+        mainlib.update_lib()
     
-    if allargs.script in mainlib.data.keys():
-        run_script = YamlScript(mainlib.data[allargs.script]['path'], allargs.script)
+    if allargs.script_name in mainlib.data.keys():
+        used_script = YamlScript(path=mainlib.data[allargs.script_name]['path'], 
+                                 name=allargs.script_name, 
+                                 library_files_path=mainlib.files_path, 
+                                 bshm_version=__version__,
+                                 known_shells=settings_json.shell_dict,
+                                 msg=settings_json.msg,
+                                 auto_scan=settings_json.auto_scan,
+                                 status_from_lib=mainlib.data.get(allargs.script_name,{}).get('status', ''),
+                                 library_name=settings_json.used_library)
         # Флаг install
         if allargs.install:
-            print(run_script.install)
-        # Печать кода без исполнения
-        elif allargs.print:
-            run_script.ParseArgs(allargs.options, allargs.script)
-            builded_script_list = []
-            for script in run_script.items_launch_set:  
-                builded_script_list.append(run_script.BuildScript(run_script.scripts_dict[script]['script']))
-            # обратная замена некоторых escape последовательностей
-            delimite = str(allargs.merge_symbol).replace('\\n','\n')
-            delimite = delimite.replace('\\r','\r')
-            delimite = delimite.replace('\\a','\a')
-            delimite = delimite.replace('\\b','\b')
-            delimite = delimite.replace('\\f','\f')
-            delimite = delimite.replace('\\t','\t')
-            delimite = delimite.replace('\\v','\v')
-            
-            codetoprint = delimite.join(builded_script_list)
-            print(codetoprint)
-            #if allargs.base64:
-            #    print(tobase64(codetoprint))
-            #else:
-            #    print(codetoprint)
-        # Исполнение кода
+            print(used_script.install)
+        # исполнение / печать кода
         else:
-            if allargs.run_shell:
-                run_shell = allargs.run_shell
-            else:
-                run_shell = run_script.shell
-            
-            run_script.ParseArgs(allargs.options, allargs.script)
-            for script in run_script.items_launch_set:
-                builded_script = run_script.BuildScript(run_script.scripts_dict.get(script, {}).get('script', ''))
-                if allargs.log:
-                    run_script.Execute_log(run_shell, builded_script, __version__, allargs, script)
-                else:
-                    run_script.Execute(run_shell, builded_script, __version__, allargs, script)
+            used_script.script_launch(logging=allargs.logging,
+                                      show_log=allargs.show_log,
+                                      script_name=allargs.script_name,
+                                      script_args=allargs.options,
+                                      code_print=allargs.print)
     # Поиск, если запрашиваемый скрипт не найден
     else:
-        founds = mainlib.Search([], [allargs.script], ['shell','status'], True)
+        founds = mainlib.search([], [allargs.script_name], ['status'], True)
         if len(founds):
-            print(f'Script "{allargs.script}" not found. Search results:\n')
-            print(make_table(founds))
+            print(f'Script "{allargs.script_name}" not found. Search results:\n')
+            print(msg.make_table(founds))
         else:
-            print(f'Script "{allargs.script}" not found.')
+            print(f'Script "{allargs.script_name}" not found.')
 
 # Команда search
 def command_search(allargs):
-    if ConfigFile.CONF_Library_autoupdate:
-        mainlib.FileSearch()
-        mainlib.CheckChanges()
-        mainlib.Update()
+    mainlib = Library(path=settings_json.used_library_path, 
+                      msg=settings_json.msg, 
+                      folder_status=settings_json.used_library_status,
+                      known_shells=settings_json.shell_dict) # Загрузка 'library.json'
+    
+    if settings_json.auto_scan:
+        mainlib.file_search()
+        mainlib.check_changes()
+        mainlib.update_lib()
     add_search=[]
     if allargs.author: add_search.append('author')
     if allargs.shell: add_search.append('shell')
     if allargs.description: add_search.append('description')
-    founds = mainlib.Search(['tags'] + add_search, allargs.keyword, ['status'] + add_search, allargs.ignore_case)
+    founds = mainlib.search(['tags'] + add_search, allargs.keyword, ['status'] + add_search, allargs.ignore_case)
     if len(founds):
-        print('Search results:\n')
-        print(make_table(founds))
+        if not allargs.keyword:
+            print('List of all available scripts:\n')
+        else:
+            print('Search results:\n')
+        print(msg.make_table(founds))
+        if not allargs.keyword: 
+            print()
+            search_parcer.print_usage()
     else:
         print('Nothing found ...')
-    
+
 # Команда config
 def command_config(allargs):
-    if allargs.lib_path:
-        if os.path.isdir(allargs.lib_path) or allargs.lib_path == 'default':
-            ConfigFile.config.set('Library', 'path', allargs.lib_path)   
-        else:
-            error('Directory does not exist', allargs.lib_path)
-            exit(1)
-    if allargs.lib_autoupdate:
-        ConfigFile.config.set('Library', 'autoupdate', allargs.lib_autoupdate)
-    
-    ConfigFile.Write()
-    print('Current settings:')
-    print()
-    print(ConfigFile.ReadFile())
+    if not allargs.lib_autoupdate and not allargs.bshm_color:# and allargs.reset_settings:
+        bshm_config_parcer.print_usage()
+        print('set: error: requires at least one of the arguments')
+    else:
+        #if allargs.reset_settings:
+        if allargs.lib_autoupdate: settings_json.set_settings_bool('auto-scan', allargs.lib_autoupdate)
+        if allargs.bshm_color: settings_json.set_settings_bool('color', allargs.bshm_color)
 
-    if ConfigFile.CONF_Library_autoupdate:
-        ConfigFile.Read()
-        newlib = Library(ConfigFile.CONF_Library_Path)
-        newlib.FileSearch()
-        newlib.CheckChanges()
-        newlib.Update()
+# LIBRARY
+def library_add(allargs):
+    settings_json.set_library(allargs.library_path, allargs.library_name)
 
-# Команда update
-def command_update(allargs):
+def library_del(allargs):
+    settings_json.del_library(allargs.libraries_names)
+
+def library_use(allargs):
+    settings_json.select_library(allargs.library_name)
+    _ = Library(path=settings_json.used_library_path,
+                msg=settings_json.msg,
+                folder_status=settings_json.used_library_status,
+                known_shells=settings_json.shell_dict,
+                verbose=True) # Загрузка 'library.json'
+
+def library_scan(allargs):
+    mainlib = Library(path=settings_json.used_library_path,
+                      msg=settings_json.msg,
+                      folder_status=settings_json.used_library_status,
+                      known_shells=settings_json.shell_dict,
+                      verbose=True) # Загрузка 'library.json'
     if allargs.rebuild_lib: mainlib.data = {}
-    mainlib.FileSearch()
-    mainlib.CheckChanges()
-    mainlib.Update()
+    mainlib.file_search()
+    mainlib.check_changes()
+    mainlib.update_lib()
+
+# SHELL
+def shell_add(allargs):
+    shell_name = allargs.shell_name if allargs.shell_name else os.path.basename(allargs.shell_path)
+    settings_json.shell_set(shell_name, allargs.shell_path, allargs.shell_popen_args, allargs.shell_encoding, False)
+
+def shell_del(allargs):
+    settings_json.del_shells(allargs.shells_names)
 
 if __name__ == "__main__":
-    try: 
-        if version_info < (3, 10, 6):
-            warning('Outdated Python','Please upgrade your Python version to 3.10.6 or higher')
+    #if settings_json.color: print(Style.RESET_ALL, end='') # Lol просто фикс тупой консоли кали на маке, которая красит все в серый :/ 
+    try:
+        #if version_info < (3, 10, 6):
+        #    warning('Outdated Python','Please upgrade your Python version to 3.10.6 or higher', settings_json.color)
         
         # Определение парсера аргументов
-        mainparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description=__main_description__)
-        mainparser.add_argument('-v', '--version', action='version', version=__version__)
-        subparsers = mainparser.add_subparsers(required=True)
-
-        # Субпарсер для search
-        search_parcer = subparsers.add_parser('search', help='search script at library by keywords', description='By default, the search is performed by tags and script names.')
-        search_parcer.add_argument('keyword', nargs='+', help='search keywords')
-        search_parcer.add_argument("-i","--ignore-case",dest="ignore_case", action="store_true", help="ignore case distinctions")
-        search_parcer.add_argument("-A","--author", action="store_true", help="add search by author")
-        search_parcer.add_argument("-S","--shell", action="store_true", help="add search by shell")
-        search_parcer.add_argument("-D","--description", action="store_true", help="add search by script description")
-        search_parcer.set_defaults(func=command_search)
-
-        # Субпарсер для update
-        update_parser = subparsers.add_parser('update', help='library update options', description='Run without flags to update script library (not required if auto-update is enabled).')
-        update_parser.add_argument('-f','--forced', dest='rebuild_lib', action="store_true", help="rebuild script library")
-        update_parser.set_defaults(func=command_update)
-
-        # Субпарсер для use
-        use_parcer = subparsers.add_parser('use', help='use script')
-        use_parcer.add_argument('script', help='script name and it\'s options')
-        use_parcer.add_argument('options', nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
-        use_parcer.add_argument("-i","--install", action="store_true", help="show script\'s installation information")
-        use_parcer.add_argument("--shell", default='' ,dest="run_shell", metavar="path", help="specify shell for script execution")
+        mainparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, 
+                                             description=__main_description__, 
+                                             add_help=False)
+        main_subparsers = mainparser.add_subparsers(title=msg.c('commands','_B'), required=True)
+        mainoptions = mainparser.add_argument_group(msg.c('options','_B'))
+        mainoptions.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        mainoptions.add_argument('-v', '--version', action='version', version=__version__)
         
-        # Группа логирования
-        logger_group = use_parcer.add_argument_group('logging options')
-        logger_group.add_argument("-o","--out", dest="log", metavar="file", help="log execution process to file (append mod)")
-        logger_group.add_argument("-l","--log-headers", dest="show_log", action="store_true", help="print log headers when executing script")
+        #####################################
+        # Субпарсер для use
+        #####################################
+        use_parcer = main_subparsers.add_parser('use',
+                                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                help='use script',
+                                                description=msg.frame_text(f'Runs a script from the library by it\'s name.'),
+                                                add_help=False,
+                                                usage='%(prog)s [-l] [-o FILE] [-i] [-c] [-h] script ...')
+        # Группа позиционных аргументов
+        use_positional_group = use_parcer.add_argument_group(msg.c('positional arguments','_B'))
+        use_positional_group.add_argument('script_name', metavar='script', help='script name and it\'s options')
+        use_positional_group.add_argument('options', nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+        # Группа запуска скриптов
+        use_launch_group = use_parcer.add_argument_group(msg.c('script launch options','_B'))
+        use_launch_group.add_argument('-l','--log-headers', dest='show_log', action="store_true", help="print log headers when executing script")
+        use_launch_group.add_argument("-o","--out", dest="logging", metavar="FILE", help="log execution process to file (append mod)")
+        #use_launch_group.add_argument('-s','--shell', default='' ,dest='run_shell', metavar='PATH', help='specify shell for script execution')
+        # Группа печати
+        coder_group = use_parcer.add_argument_group(msg.c('code printing options','_B'))
+        coder_group.add_argument("-i","--install", action="store_true", help="show script\'s installation information")
+        coder_group.add_argument("-c","--code", dest="print", action="store_true", help="print script without execution")
+        # Группа других аргументов
+        use_other_group = use_parcer.add_argument_group(msg.c('other options','_B'))
+        use_other_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
         use_parcer.set_defaults(func=command_use)
         
-        # Группа печати
-        coder_group = use_parcer.add_argument_group('code printing options')
-        coder_group.add_argument("-c","--code", dest="print", action="store_true", help="print script without execution")
-        coder_group.add_argument("-d","--delimiter", metavar='*', dest="merge_symbol", default='\n', help="concatenate used item scripts using the specified delimiter (default: {})".format('\\n'))
-        #coder_group.add_argument("-b","--base64", dest="base64", action="store_true", help="print encoded in base64 script without execution")
-
+        #####################################
+        # Субпарсер для search
+        #####################################
+        search_parcer = main_subparsers.add_parser('search', 
+                                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                   help='search script at library by keywords', 
+                                                   description=msg.frame_text(f'Search for a script in the used library. By default, the search is performed by tags and script names.'), 
+                                                   add_help=False)
+        # Группа позиционных аргументов
+        search_positional_group = search_parcer.add_argument_group(msg.c('positional arguments','_B'))
+        search_positional_group.add_argument('keyword', nargs='*', help='keywords for search', default=[])
+        # Группа опций
+        search_options_group = search_parcer.add_argument_group(msg.c('search options','_B'))
+        search_options_group.add_argument("-i","--ignore-case",dest="ignore_case", action="store_true", help="ignore case distinctions")
+        search_options_group.add_argument("-A","--author", action="store_true", help="add search by author")
+        search_options_group.add_argument("-D","--description", action="store_true", help="add search by script description")
+        search_options_group.add_argument("-S","--shell", action="store_true", help="add search by shell")
+        # Группа других опций
+        search_other_group = search_parcer.add_argument_group(msg.c('other options','_B'))
+        search_other_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        search_parcer.set_defaults(func=command_search)
+        
+        #####################################
         # Субпарсер для set
-        config_parcer = subparsers.add_parser('set', help='settings', description='')
-        config_group = config_parcer.add_argument_group('library settings')
-        config_group.add_argument("-Lp", dest="lib_path", metavar="directory", help="set path to library (set \'default\' to use bashmator\'s local library)")
-        config_group.add_argument("-La", dest="lib_autoupdate", choices=['true','false'], help="enable/disable library auto-update")
-        config_parcer.set_defaults(func=command_config)
+        #####################################
+        bshm_config_parcer = main_subparsers.add_parser('set',
+                                                        formatter_class=argparse.RawDescriptionHelpFormatter, 
+                                                        help='settings', 
+                                                        description=msg.frame_text(f'Current setings:\n  auto-scan {settings_json.auto_scan}\n  color {settings_json.color}'),
+                                                        add_help=False)
+        bshm_config_settings_group = bshm_config_parcer.add_argument_group(msg.c('settings','_B'))
+        bshm_config_settings_group.add_argument('--auto-scan', dest='lib_autoupdate', choices=['true','false'], help='automatically detect changes in the used library')
+        bshm_config_settings_group.add_argument('--color', dest='bshm_color', choices=['true','false'], help='use color on the command line')
+        #bshm_config_settings_group.add_argument('--reset', dest='reset_settings', action='store_true', help='reset settings to default')
+        bshm_config_other_group = bshm_config_parcer.add_argument_group(msg.c('other options','_B'))
+        bshm_config_other_group.add_argument('-h', '--help', action='help', help='show this help message and exit')
+        bshm_config_parcer.set_defaults(func=command_config)
 
+        #####################################
+        # Cубпарсер для shell
+        #####################################
+        if not settings_json.user_shell_list:
+            shells_table = '  empty'
+        else:
+            shells_table = msg.make_table([['name', 'path', 'popen arguments', 'encoding']] + settings_json.get_shells_table())
+        shell_config_parcer = main_subparsers.add_parser('shell',
+                                                         formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                         help='shells management',
+                                                         epilog=f'{msg.gen_color_style_line()}\n{msg.c("known shells","_B")}:\n{shells_table}',
+                                                         description='',
+                                                         add_help=False)
+        shell_subparcers = shell_config_parcer.add_subparsers(title=msg.c('commands','_B'), required=True)
+        ## Субпарсер для shell add
+        shell_subparcers_add = shell_subparcers.add_parser('add',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='add a new shell to the known list',
+                                                           description=msg.frame_text('Add a new shell to the known list.'),
+                                                           add_help=False)
+        shell_subparcers_add.set_defaults(func=shell_add)
+        shell_subparcers_add_positional_group = shell_subparcers_add.add_argument_group(msg.c('positional arguments','_B'))
+        shell_subparcers_add_positional_group.add_argument('shell_path', metavar='path', help='full path to the shell (for example: /usr/bin/bash)')
+        shell_subparcers_add_options_group = shell_subparcers_add.add_argument_group(msg.c('options','_B'))
+        shell_subparcers_add_options_group.add_argument('--name', metavar='NAME', dest='shell_name', default='', help="specify shell name (default: base name)")
+        shell_subparcers_add_options_group.add_argument('--encoding', metavar='CODE', dest='shell_encoding', default='utf-8', help='shell encoding (used when logging; default: \'utf-8\')')
+        shell_subparcers_add_options_group.add_argument('--popen-args', metavar='LIST', dest='shell_popen_args', default='["-c"]', help='shell arguments for the subprocess.Popen function (default: \'["-c"]\')')
+        shell_subparcers_add_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        
+        ## Субпарсер для shell delete
+        shell_subparcers_delete = shell_subparcers.add_parser('delete',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='remove a shell from the known list', 
+                                                           description=msg.frame_text('Remove a shell from the known list. Use \'delete ALL\' to clear.'),
+                                                           add_help=False)
+        shell_subparcers_delete.set_defaults(func=shell_del)
+        shell_subparcers_delete_positional_group = shell_subparcers_delete.add_argument_group(msg.c('positional arguments','_B'))
+        shell_subparcers_delete_positional_group.add_argument('shells_names', metavar='name', nargs='+' ,help='shell name (can be multiple)')
+        shell_subparcers_delete_options_group = shell_subparcers_delete.add_argument_group(msg.c('options','_B'))
+        shell_subparcers_delete_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+
+        # Группа для опций shell
+        shell_subparcers_group = shell_config_parcer.add_argument_group(msg.c('options','_B'))
+        shell_subparcers_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+
+        #####################################
+        # Cубпарсер для library
+        #####################################
+        libraries_table = msg.make_table([['name', 'status', 'path']] + settings_json.get_libraries_table())
+        library_config_parser = main_subparsers.add_parser('library',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='libraries management', 
+                                                           epilog=f'{msg.gen_color_style_line()}\n{msg.c("known libraries","_B")}:\n{libraries_table}',
+                                                           add_help=False)
+        library_config_subparsers = library_config_parser.add_subparsers(title=msg.c('commands','_B'), required=True)
+        ## Субпарсер для library add
+        library_config_add = library_config_subparsers.add_parser('add',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='add a new library to the known list', 
+                                                           description=msg.frame_text('Add a new library to the known list.'),
+                                                           add_help=False)
+        library_config_add.set_defaults(func=library_add)
+        library_config_add_positional_group = library_config_add.add_argument_group(msg.c('positional arguments','_B'))
+        library_config_add_positional_group.add_argument('library_path', metavar='path', help="path to main library directory")
+        library_config_add_options_group = library_config_add.add_argument_group(msg.c('options','_B'))
+        library_config_add_options_group.add_argument('--name', metavar='NAME', dest='library_name', default='', help="specify library name (default: folder name)")
+        library_config_add_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        ## Субпарсер для library delele
+        library_config_del = library_config_subparsers.add_parser('delete',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='remove library from the known list', 
+                                                           description=msg.frame_text('Remove a library from the known list. Type \'delete ALL\' to clear.'),
+                                                           add_help=False)
+        library_config_del.set_defaults(func=library_del)
+        library_config_del_positional_group = library_config_del.add_argument_group(msg.c('positional arguments','_B'))
+        library_config_del_positional_group.add_argument('libraries_names', metavar='name', nargs='+' ,help='library name (can be multiple)')
+        library_config_del_options_group = library_config_del.add_argument_group(msg.c('options','_B'))
+        library_config_del_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        ## Субпарсер для library scan
+        library_config_scan = library_config_subparsers.add_parser('scan',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='detect changes in the used library',
+                                                           description=msg.frame_text('Scans the directory of the used library for changes in it\'s contents.'),
+                                                           add_help=False)
+        library_config_scan.set_defaults(func=library_scan)
+        library_config_scan_options_group = library_config_scan.add_argument_group(msg.c('options','_B'))
+        library_config_scan_options_group.add_argument('-f','--forced', dest='rebuild_lib', action='store_true', help='reset the saved information and rescan the library')
+        library_config_scan_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        ## Субпарсер для library use
+        library_config_use = library_config_subparsers.add_parser('use',
+                                                           formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                           help='select library for use',
+                                                           description=msg.frame_text('Select the library to use from the known list.'),
+                                                           add_help=False)
+        library_config_use.set_defaults(func=library_use)
+        library_config_use_positional_group = library_config_use.add_argument_group(msg.c('positional arguments','_B'))
+        library_config_use_positional_group.add_argument('library_name', metavar='name', help='library name')
+        library_config_use_options_group = library_config_use.add_argument_group(msg.c('options','_B'))
+        library_config_use_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        # Группа для опций library
+        library_config_group = library_config_parser.add_argument_group(msg.c('options','_B'))
+        library_config_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+        
+        #####################################
         allargs = mainparser.parse_args()
-        mainlib = Library(ConfigFile.CONF_Library_Path) # Загрузка '__library.json'
         allargs.func(allargs)
 
     except KeyboardInterrupt: 
         quit(0)
+    finally:
+        settings_json.save_changes()   
+        colorama_deinit()

@@ -1,0 +1,21 @@
+# Yep, u can delete description
+description: |-
+  The "shell" and "script" keys are sufficient for the script to work.
+
+  For a better understanding of what is going on it is recommended to look at the file "bashmator/library/modules/examples/0_minimal.yaml".
+
+shell: bash
+script: |-
+  hostnamectl
+  echo
+  echo "user:   $(whoami)"
+  echo "groups: $(groups)"
+  echo
+  cat /etc/passwd | grep $(whoami)
+  cat /etc/passwd | grep root
+  echo
+  ip addr show
+  echo
+  cat /etc/hosts | grep -v "#"
+  echo
+  cat /etc/resolv.conf | grep -v "#"

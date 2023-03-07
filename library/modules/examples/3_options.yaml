@@ -1,0 +1,51 @@
+author: demo
+description: |-
+  The argument properties are set by changing the "default" key value. 
+  
+  For a better understanding of what is going on it is recommended to look at the file "bashmator/library/modules/examples/3_options.yaml".
+tags:
+  - help
+  - manual
+  - options
+  - flags
+install: >-
+  # No installations is needed
+
+
+arguments:
+  
+  some-option:
+    default: SOME_DEFAULT_VALUE
+    replacer: __OPTION__
+    description: if the "default" key is a string, the argument is an option with the default value
+  
+  empty-option:
+    default:
+      -
+    replacer: _-EMPTY-ARG-_
+    description: if the "default" key is a list with one empty value, the argument is an option with empty default value
+  
+  f:
+    default:
+      - value1
+      - value2
+    replacer: ==CHOISE-OF-TWO==
+    description: if the "default" key is a list with two elements, the argument is an option with two values, where the first item is the default (can be empty)
+
+  optional-choise:
+    default:
+      - val1
+      - val2
+      - val3
+    replacer: --OPTIONAL-CHOISE--
+    description: if the "default" key is a list with more than 3 non-empty items, the argument is an option with a limited choice of values, where the first in the list is the default
+
+
+
+shell: bash
+script: |-
+  echo "some-option     : __OPTION__"
+  echo "empty-option    : _-EMPTY-ARG-_"
+  echo "f               : ==CHOISE-OF-TWO=="
+  echo "optional-choise : --OPTIONAL-CHOISE--"
+  

@@ -1,4 +1,4 @@
-tabulate
-jsonschema
-pyyaml
-appdirs
+tabulate>=0.9.0
+pyyaml>=6.0
+appdirs>=1.4.4
+colorama>=0.4.6

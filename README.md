@@ -1,337 +1,337 @@
-# Bashmator - script/one-liner manager
-> One Tool to rule them all, One Tool to find them,  
-> One Tool to log them all, and in the CLI bind them ...
+<h3 align="center">
+  <img src="static/bashmator.png" alt="bshmt" width="700px">
+</h3>
 
 Основная задача программы - предоставить единую легко дополняемую среду для запуска, систематизации, поиска и логирования большого количества однострочников и небольших скриптов.
 
 Каждый отдельный скрипт или набор скриптов записываются в YAML-файл, из которого bashmator генерирует аргументы командной строки, подставляет их значения в указанные точки и запускает скрипт в указанной оболочке.
 
-В папке со скриптами (библиотеке) bashmator создает файл `__library.json` и поддерживает его актуальность. В данном файле записывается информация о доступных скриптах, что избавляет от необходимости парсить все YAML-файлы при каждом запуске программы.
-## Install
+В папке со скриптами (библиотеке) bashmator создает файл `library.json` и поддерживает его актуальность. В данном файле записывается информация о доступных скриптах, что избавляет от необходимости парсить все YAML-файлы при каждом запуске программы.
+
+# Установка
 ```
-git clone https://github.com/VinzeKatze/bashmator
+git clone https://github.com/vinzekatze/bashmator
 cd ./bashmator
 pip install -r requirements.txt
 ```
-Рекомендуется добавить bashmator в PATH, иначе программой будет не удобно пользоваться:
+Добавить оболочку bash:
+```
+./bashmator.py shell add /usr/bin/bash
+```
+Добавить в PATH:
 ```
 sudo ln -s $(pwd)/bashmator.py /usr/local/bin/bashmator
 ```
-## Update
-Буду стараться делать так, чтобы для обновления было достаточно использовать только `git pull`, но иногда может потребоваться пересобрать библиотеку скриптов:
-```
-git pull
-bashmator update -f
-```
-## Usage
-### Program
-```
-$ bashmator -h 
-usage: bashmator [-h] [-v] {search,update,use,set} ...
+# Функционал и особенности работы
+Для каждой команды в программе доступна помощь, вызываемая с помощью флага `-h` или `--help`:
 
------------------------------------------------------------------
---- bashmator 0.3.3 (https://github.com/VinzeKatze/bashmator) ---
------------------------------------------------------------------
-
-Library path:
-/...YOUR PATH.../bashmator/library
-
-positional arguments:
-  {search,update,use,set}
-    search              search script at library by keywords
-    update              library update options
-    use                 use script
-    set                 settings
-
-options:
-  -h, --help            show this help message and exit
-  -v, --version         show program's version number and exit
+<details>
+  <summary><code>bashmator use --help</code></summary>
+  
 ```
-Поиск доступен в `use` и `search`, однако в первом случае осуществляется только по названию, а во втором - названию и тегам (расширяемо флагами):
-```
-$ bashmator use hello world             
-Script "hello" not found. Search results:
+usage: bashmator use [-l] [-o FILE] [-i] [-c] [-h] script ...
 
- script name            | shell     | status   | tags
-------------------------+-----------+----------+---------------
- examples/hello_world_1 | /bin/bash | OK       | help, example
- examples/hello_world_2 | python3   | OK       | help, example
- examples/hello_world_3 | /bin/bash | OK       | example, help
- 
-$ bashmator search -S python
-Search results:
+Runs a script from the library by it's name.
 
- script name            | status   | shell   | tags
-------------------------+----------+---------+---------------
- examples/hello_world_2 | OK       | python3 | help, example
-```
-`use` help:
-```
-$ bashmator use -h
-usage: bashmator use [-h] [-i] [--shell path] [-o file] [-l] [-c] [-d *] script
+................................................................................
 
 positional arguments:
   script               script name and it's options
 
-options:
-  -h, --help           show this help message and exit
-  -i, --install        show script's installation information
-  --shell path         specify shell for script execution
-
-logging options:
-  -o file, --out file  log execution process to file (append mod)
+script launch options:
   -l, --log-headers    print log headers when executing script
+  -o FILE, --out FILE  log execution process to file (append mod)
 
 code printing options:
+  -i, --install        show script's installation information
   -c, --code           print script without execution
-  -d *, --delimiter *  concatenate used item scripts using the specified delimiter (default: \n)
-```
-Пример запуска скрипта из библиотеки с опцией логирования результатов:
-```
-$ bashmator use -o ./hello_world.log examples/hello_world_1 2
-Hello World!
-...Hello, vinzekatze
 
-Hello World!
-...Hello, vinzekatze
+other options:
+  -h, --help           show this help message and exit
 ```
-Лог:
+  
+</details>
+<details>
+  <summary><code>bashmator search --help</code></summary>
+  
 ```
-$ cat ./hello_world.log 
-+------------------------------------------------------------
-+ Generated by bashmator 0.3.3
-+------------------------------------------------------------
-+ Script name:               examples/hello_world_1 (0)
-+ Start time:                2022-10-09 20:33:06 (UTC)
-+ Shell:                     /bin/bash
-+------------------------------------------------------------
-+ Running code
-+------------------------------------------------------------
+usage: bashmator search [-i] [-A] [-D] [-S] [-h] [keyword ...]
 
-phrase='Hello World'
-ans=$(echo $phrase | cut -d ' ' -f 1)
-for i in $(seq 1 2); do
-  echo 'Hello World!'
-  echo -e "...$ans, $(whoami)\n"
-done
+Search for a script in the used library. By default, the search is performed by
+tags and script names.
 
-+------------------------------------------------------------
-+ Log
-+------------------------------------------------------------
+................................................................................
 
-Hello World!
-...Hello, vinzekatze
+positional arguments:
+  keyword            keywords for search
 
-Hello World!
-...Hello, vinzekatze
+search options:
+  -i, --ignore-case  ignore case distinctions
+  -A, --author       add search by author
+  -D, --description  add search by script description
+  -S, --shell        add search by shell
 
+other options:
+  -h, --help         show this help message and exit
 
-+------------------------------------------------------------
-+ End time:                  2022-10-09 20:33:06 (UTC)
-+------------------------------------------------------------
 ```
-### Library
-По умолчанию для хранения скриптов bashmator использует внутреннюю папку `library`. Внутри этой папки можно создавать произвольные каталоги и подкаталоги. Чтобы добавить новый скрипт в программу необходимо поместить YAML-файл внутри данной папки и обновить библиотеку (по умолчанию включено автообновление при каждом запуске). 
-Название скрипта генерируется следующим образом `{folder_name}/{subfolder_name}/.../{basename_of_yaml}`
+  
+</details>
 
-Чтобы использовать другую папку в качестве библиотеки выполните команду:
+<details>
+  <summary><code>bashmator set --help</code></summary>
+  
 ```
-bashmator set -Lp <path to directory>
+usage: bashmator set [--auto-scan {true,false}] [--color {true,false}] [-h]
+
+Current setings:
+  auto-scan True
+  color True
+
+................................................................................
+
+settings:
+  --auto-scan {true,false}
+                        automatically detect changes in the used library
+  --color {true,false}  use color on the command line
+
+other options:
+  -h, --help            show this help message and exit
+
 ```
-### YAML
-Ниже представлена общая требуемая структура YAML-файлов:
+
+</details>
+
+<details>
+  <summary><code>bashmator shell --help</code></summary>
+  
 ```
-description:      <string or null>      # описание скрипты
-author:           <string or null>      # автор скрипта
-tags:             <list or null>        # теги для поиска
-  - [tag]         <string or number>     
-  - [...]
-install:          <string or null>      # информация о установке необходимых для работы скрипта программ
-arguments:        <dictionary or null>  # аргументы командной строки
-  [argument name]:                      # произвольное имя аргумента
-    default:      <string, number, list or null>  # значение по умолчанию
-    replacer:     <string>              # cтрока, которая будет заменена в коде на значение аргумента
-    description:  <string or null>      # описание аргумента
-  [...]                                 # количество аргументов не ограничено
-shell:            <string>              # путь до оболочки, в которой скрипт будет запущен
-script:           <string or null>      # код
-item_[NUM]:       (not required)        # блок с дополнительным скриптом
-  script:         <string or null>      # код
-  description:    <string or null>      # описание скрипта
-item_[...]                              # количество дополнительных скриптов не ограниченно
+usage: bashmator shell [-h] {add,delete} ...
+
+commands:
+  {add,delete}
+    add         add a new shell to the known list
+    delete      remove a shell from the known list
+
+options:
+  -h, --help    show this help message and exit
+
+................................................................................
+
+known shells:
+ name   | path          | popen arguments   | encoding
+--------+---------------+-------------------+------------
+ bash   | /usr/bin/bash | ['-c']            | utf-8
+
 ```
-Чтобы лучше понять структуру, рекомендуется ознакомиться с примерами в `library/examples`.
-Также не забывайте использовать возможности YAML для работы со строками, например `|-` даст возможность вводить многострочные тексты и скрипты:
+  
+</details>
+
+<details>
+  <summary><code>bashmator library --help</code></summary>
+
 ```
-description: |-
-  Многострочное
-  описание
-  работы 
-  скрипта
+usage: bashmator library [-h] {add,delete,scan,use} ...
+
+commands:
+  {add,delete,scan,use}
+    add                 add a new library to the known list
+    delete              remove library from the known list
+    scan                detect changes in the used library
+    use                 select library for use
+
+options:
+  -h, --help            show this help message and exit
+
+................................................................................
+
+known libraries:
+ name    | status   | path
+---------+----------+---------------------------------------------
+ default | IN USE   | /home/kali/workspace/apps/bashmator/library
+
+```
+
+</details>
+
+## Оболочки
+Не смотря на название, bashmator способен работать не только с bash. Ниже представлены примеры команды на добавление некоторых других оболочек, интерпритаторов и программ:
+```sh
+bashmator shell add /usr/bin/zsh
+bashmator shell add /usr/bin/python3
+bashmator shell add /usr/bin/node --popen-args '["-e"]'
+bashmator shell add /usr/bin/msfconsole --popen-args '["-q", "-x"]'
+```
+Потенциально bashmator способен работать с любыми интерпритаторами, способных принимать последовательность команд из аргументов командной строки. Флаг, отвечающий за прием последовательности команд, должен всегда располагаться в конце списка, передаваемого в аргументе `--popen-args`.
+
+## Библиотеки
+Рекомендуется создавать собственные библиотеки, а не добавлять свои скрипты в библиотеку по умолчанию.
+
+Чтобы создать библиотеку достаточно создать каталог, содержащий каталоги `files` и `modules`. В `files` следует располагать файлы, к которым будут обращаться ваши скрипты без привязки к путям используемой файловой системы, а в `modules` - ваши YAML-ы. Далее необходимо добавить вашу библиотеку в bashmator и выбрать её для использования:
+```
+bashmator library add <path to your library>
+bashmator library use <your lirary name>
+```
+
+# Структура YAML
+Минимая структура файла, необходимая для работы:
+```yaml
+shell: <SHELL NAME>
 script: |-
-  for i in {1..5}; do
-    echo $i
-  done
+  <YOUR CODE>
 ```
-#### Arguments
-В зависимости от значения ключа `default` bashmator будет генерировать аргументы с разными свойствами:
-- если `default` пуст, будет сгенерирован обязательный позиционный аргумент;
-- если `default` имеет одно значение, будет сгенерирована опция со значением по умолчанию;
-- если `default` - список значений, будет сгеренирован обязательный позиционный аргумент с ограниченным выбором значений.
+Полный набор ключей, доступных на данный момент:
+<details>
+  <summary>YAML</summary>
 
-##### Пример 1
-Фрагмент YAML:
-```
+```yaml
+author: <NAME>
+description: <TEXT>
+tags:
+  - <TAG1>
+  - <TAG2>
+  - ...
+install: <INSTALLATION INFORMATION>
+
 arguments:
-  count:
-    default:
-    replacer: __COUNT__
-    description: number of repetitions. must be int.
-  t:
-    default: 'Hello World'
-    replacer: --TEXT--
-    description: phrase to repeat. default is 'Hello World'
-```
-Результат:
-```
-$ bashmator use examples/hello_world_1 -h
-usage: examples/hello_world_1 [-h] [-t value] count
+  <ARG NAME>:
+    default: <EMPTY, STRING OR LIST>
+    replacer: <VALUE REPLACER>
+    description: <TEXT>
+    multiple: <TRUE | FALSE>
+  <OTHER ARG NAME>:
+    ...
+  ...
 
-positional arguments:
-  count       number of repetitions. must be int.
+mode:
+  loop: <MULTIPLE ARG NAME>
+  join:
+    <MULTIPLE ARG NAME>: <DELIMITER>
+    <OTHER ARG>: ...
+    ...
+  format:
+    <ARG NAME>: <.format() TEMPLATE>
+    <OTHER ARG>: ...
+    ...
 
-options:
-  -h, --help  show this help message and exit
-  -t value    phrase to repeat. default is 'Hello World'
-```
-##### Пример 2
-Фрагмент YAML:
-```
-arguments:
-  x:
-    default:
-    replacer: _X_
-    description: argument number 1 (int)
-  operation:
-    default:
-      - '+'
-      - '-'
-      - '*'
-      - '/'
-    replacer: _OPER_
-    description: arithmetic operator 
-  y:
-    default:
-    replacer: _Y_
-    description: argument number 2 (int)
-```
-Результат:
-```
-$ bashmator use examples/hello_world_2 -h
-usage: examples/hello_world_2 [-h] x {+,-,*,/} y
-
-positional arguments:
-  x           argument number 1 (int)
-  {+,-,*,/}   arithmetic operator
-  y           argument number 2 (int)
-
-options:
-  -h, --help  show this help message and exit
-```
-#### Script
-В ключе `script` содержется сам код, который будет исполняться при запуске. Чтобы подставить значение аргументов в код, необходимо вставить строку из `replacer` в соответствующих местах. Следите, чтобы значения ключа `replacer` разных аргументов не пересекались, иначе возникнут ошибки подстановки.
-##### Пример
-Фрагмент YAML:
-```
-arguments:
-  count:
-    default:
-    replacer: __COUNT__
-    description: number of repetitions. must be int.
-  t:
-    default: 'Hello World'
-    replacer: --TEXT--
-    description: phrase to repeat. default is 'Hello World'
-shell: /bin/bash
+shell: <MAIN SHELL SHORT NAME OR PATH>
 script: |- 
-  phrase='--TEXT--'
-  ans=$(echo $phrase | cut -d ' ' -f 1)
-  for i in $(seq 1 __COUNT__); do
-    echo '--TEXT--!'
-    echo -e "...$ans, $(whoami)\n"
-  done
-```
-Результат запуска в режиме вывода кода без запуска:
-```
-$ bashmator use -c examples/hello_world_1 10 -t 'NO_WAR'
-phrase='NO_WAR'
-ans=$(echo $phrase | cut -d ' ' -f 1)
-for i in $(seq 1 10); do
-  echo 'NO_WAR!'
-  echo -e "...$ans, $(whoami)\n"
-done
-```
-#### Items
-Если у Вас есть множество скриптов, которые объеденены общими аргументами и предназначением, Вы можете использовать ключи `item_{NUMBER}` чтобы внести их в один YAML-файл.
-В таком случае будет сгенерирована опция `--item`, которая позволит вызывать скрипты по номеру. `--item` также поддерживает последовательности и диапазоны, например `--item 1,2,3-6`.
-##### Пример
-Фрагмент YAML:
-```
-arguments:
-  file:
-    default:
-    replacer: __PATH__
-    description: path to file
-shell: /bin/bash
-script: # if there is a script here, it will become the default item.
-item_1:
-  description: get file stat
+  <YOUR MAIN CODE>
+
+file_<NUMBER>:
+  path: <SHORT PATH TO FILE AT LIBRARY/FILES DIRECTORY>
+  replacer: <FULL PATH REPLACER>
+  description: <TEXT>
+file_<OTHER NUMBER>:
+  ...
+...
+
+item_<NUMBER>:
+  shell: <OTHER SHELL SHORT NAME OR PATH>
+  description: <TEXT>
+  mode: 
+    <SAME STRUCTURE AS AT MAIN>
   script: |-
-    echo '-------------'
-    echo '- FILE STAT:'
-    echo '-------------'
-    stat __PATH__
-item_2:
-  description: get md5 hash
-  script: |-
-    echo '-------------'
-    echo '- MD5 HASH:'
-    echo '-------------'
-    md5sum __PATH__
-item_3:
-  description: read file
-  script: |-
-    echo '-------------'
-    echo '- FILE CAT:'
-    echo '-------------'
-    cat __PATH__
-item_4:
-  description: encode file to base64
-  script: |-
-    echo '-------------'
-    echo '- BASE64:'
-    echo '-------------'
-    base64 __PATH__
+    <YOUR OTHER CODE>
+item_<OTHER NUMBER>:
+  ...
+...
 ```
-Результат:
+
+</details>
+
+C назначением данных ключей и их влиянием на работу программы можно ознакомиться на примерах, представленных во [встроенной библиотеке](library/modules/examples):
+
+```console
+$ bashmator use example    
+Script "example" not found. Search results:
+
+ script name                | status   | tags
+----------------------------+----------+-----------------------------------
+ examples/0_minimal         | OK       |
+ examples/1_basic           | OK       | help, manual, basic
+ examples/2_positional_args | OK       | help, manual, required, arguments
+ examples/3_options         | OK       | help, manual, options, flags
+ examples/4_multiple        | OK       | help, manual, multiple, mode
+ examples/5_format          | OK       | help, manual, multiple, mode
+ examples/6_files           | OK       | help, manual, files
+ examples/7_items           | OK       | help, manual, items
+
 ```
-$ bashmator use examples/hello_world_3 -h            
-usage: examples/hello_world_3 [-h] --item NUM file
+
+# Примеры работы
+Ниже представлены примеры запуска скрипта [examples/2_positional_args](library/modules/examples/2_positional_args.yaml):
+
+<details>
+  <summary>Аргументы командной строки, сгенерированные из YAML</summary>
+  
+```console
+$ bashmator use examples/2_positional_args -h
+usage: examples/2_positional_args [-h] some-pos-arg {choise1,choise2}
+
+The argument properties are set by changing the "default" key value.
+
+For a better understanding of what is going on it is recommended to look at the
+file "bashmator/library/modules/examples/2_positional_args.yaml".
+
+................................................................................
 
 positional arguments:
-  file        path to file
+  some-pos-arg       if the "default" key is not set or is empty, the argument is required positional
+  {choise1,choise2}  if the "default" key is a list with more than 3 elements and the first element is empty, the
+                     argument is positional with a limited choice of values
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help         show this help message and exit
 
-items options:
-  --item NUM  item index to execute (can be a sequence, ex: '1,2,4-6')
-
-items list:
-   # | description
------+-----------------------
-   1 | get file stat
-   2 | get md5 hash
-   3 | read file
-   4 | encode file to base64
+Shell:   bash 
+Author:  demo 
+Tags:    help, manual, required, arguments 
+                                             
 ```
+  
+</details>
+
+<details>
+  <summary>Запуск скрипта с включенной опцией логирования</summary>
+  
+```console
+$ bashmator use -o ./example.log examples/2_positional_args blablabla choise1
+some-pos-arg    : blablabla
+pos-choise      : choise1
+```
+
+</details>
+
+<details>
+  <summary>Содержимое записанного файла <code>example.log</code></summary>
+
+```console
+$ cat example.log 
++-------------------------------------------------------------------------------
++ Generated by bashmator 1.0.0
++-------------------------------------------------------------------------------
++ Script name:               examples/2_positional_args (0)
++ Start time:                2023-03-08 01:53:44 (UTC)
++ Shell:                     /usr/bin/bash -c
++-------------------------------------------------------------------------------
++ Running code
++-------------------------------------------------------------------------------
+
+echo "some-pos-arg    : blablabla"
+echo "pos-choise      : choise1"
+
++-------------------------------------------------------------------------------
++ Log
++-------------------------------------------------------------------------------
+
+some-pos-arg    : blablabla
+pos-choise      : choise1
+
++-------------------------------------------------------------------------------
++ End time:                  2023-03-08 01:53:44 (UTC)
++-------------------------------------------------------------------------------
+
+```
+
+</details>

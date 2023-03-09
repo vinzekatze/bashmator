@@ -482,10 +482,6 @@ item_<OTHER NUMBER>:
 
 ## Описание ключей:
 
-<table>
-<tr>
-<td>
-
 <details>
   <summary><b>author</b></summary>
 
@@ -967,9 +963,6 @@ item_2:
 
 </details>
 
-</td>
-</tr>
-</table>
 
 C влиянием аргументов на скрипты также можно ознакомиться во [встроенной библиотеке](library/modules/examples):
 

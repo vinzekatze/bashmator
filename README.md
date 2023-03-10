@@ -32,7 +32,7 @@ pip install -r requirements.txt
 ```
 
 <details>
-  <summary><b>Linux</b></summary>
+  <summary><b>Linux/MacOS</b></summary>
 
 Добавить оболочку bash и отсканировать библиотеку:
 

@@ -1,8 +1,8 @@
 <h1 align="center">
   <img src="static/bashmator.png" alt="bshm" width="500px">
   <br>
-  <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square&logo="></a>
-  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3.10-blue.svg?style=flat-square&logo=python"></a>
+  <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/github/release/vinzekatze/bashmator?style=flat-square"></a>
+  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3-blue.svg?style=flat-square&logo=python"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/linux-✔️-green.svg?style=flat-square&logo=linux&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/macos-✔️-green.svg?style=flat-square&logo=macos&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/win-✔️%20%5Bnot%20tested%20enough%5D-orange.svg?style=flat-square&logo=windows"></a>

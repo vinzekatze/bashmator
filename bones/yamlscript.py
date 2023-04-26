@@ -489,7 +489,7 @@ class YamlScript:
                 self.interrupt_time = time()
             if self.interrupt_count > 2:
                 raise
-        finally:
+        finally: 
             if show_log:
                 endstr = get_log_end(get_local_time()) if last_log or self.interrupt_count > 2 else '\n'
                 print(endstr, end='')
@@ -504,7 +504,7 @@ class YamlScript:
                 try:
                     # Старт субпроцесса
                     with subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
-                        reader = TextIOWrapper(proc.stdout, encoding=shell_encoding)
+                        reader = TextIOWrapper(proc.stdout, encoding=shell_encoding, newline='', line_buffering=False)
                         while True:
                             char=reader.read(1)
                             if char:

@@ -12,7 +12,7 @@ from bones.yamlscript import YamlScript
 from bones.library import Library
 from bones.config import Configuration
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __programm_location__ = os.path.dirname(os.path.realpath(__file__))
 __default_lib_path__ = os.path.join(__programm_location__,'library')
 __config_location__ = user_config_dir('bashmator')

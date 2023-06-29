@@ -1,0 +1,16 @@
+author: demo
+description: >-
+  Example of a flag argument
+tags:
+  - help
+  - manual
+  - arguments
+arguments:
+  b:
+    default:
+      - Hello World!
+      - Bye World!
+    description: type 'Bye World!'
+shell: bash
+script: >-
+  echo #b#

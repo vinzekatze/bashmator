@@ -1,0 +1,22 @@
+author: demo
+description: |-
+  Example of simple items with custom mode
+tags:
+  - help
+  - manual
+  - items
+arguments:
+  arg:
+    description: random string
+shell: bash
+item_1:
+  description: default format
+  script: >-
+    echo Input: "#arg#"
+item_2:
+  description: custom format
+  mode:
+    format:
+      arg: 'custom format {!r}'
+  script: >-
+    echo Input: "#arg#"

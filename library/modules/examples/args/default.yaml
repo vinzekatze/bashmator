@@ -1,0 +1,14 @@
+author: demo
+description: >-
+  Example of a simple argument with a default value
+tags:
+  - help
+  - manual
+  - arguments
+arguments:
+  s:
+    default: Hello World
+    description: random string
+shell: bash
+script: >-
+  echo 'Input: #s#'

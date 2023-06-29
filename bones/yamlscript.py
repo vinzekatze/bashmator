@@ -30,13 +30,16 @@ class YamlScript:
 
     def __mode_collector__(self, mode):
         out = copy.deepcopy(self.main_mode)
-        out.update({'loop': mode.get('loop', self.main_mode['loop'])}) 
+        out.update({'loop': mode.get('loop', self.main_mode['loop'])})
+        out.update({'readfile': mode.get('readfile', self.main_mode['readfile'])})
         #main_mode_copy = self.main_mode.copy()
         for arg in self.arguments.keys():
             join_val = mode.get('join',{}).get(arg, None)
             format_val = mode.get('format',{}).get(arg, None)
+            replace_val = mode.get('replace',{}).get(arg, {})
             out['join'][arg] = join_val if join_val else self.main_mode['join'][arg]
             out['format'][arg] = format_val if format_val else self.main_mode['format'][arg]
+            out['replace'][arg] = replace_val if replace_val else self.main_mode['replace'][arg]
         return out
     
     def __content_parse__(self, content):
@@ -56,12 +59,14 @@ class YamlScript:
 
         # Main mode сборка
         mode = content.get('mode', {})
-        self.main_mode.update({'loop': mode.get('loop', None), 'join': {}, 'format': {}})
+        self.main_mode.update({'loop': mode.get('loop', None), 'readfile': mode.get('readfile', []), 'join': {}, 'format': {}, 'replace': {}})
         for arg in self.arguments.keys():
             join_val = mode.get('join',{}).get(arg, None)
             format_val = mode.get('format',{}).get(arg, None)
+            replace_val = mode.get('replace',{}).get(arg, {})
             self.main_mode['join'][arg] = join_val if join_val is not None else ' '
             self.main_mode['format'][arg] = format_val if format_val else ''
+            self.main_mode['replace'][arg] = replace_val if replace_val else {}
 
 
         # Формирование словаря доступных скриптов
@@ -89,7 +94,7 @@ class YamlScript:
             if key.startswith("file_"):
                 file_content = content.get(key,{})
                 self.files_dict.update({int(key[5:]): {'path': file_content.get('path', ''),
-                                                       'replacer': file_content.get('replacer', ''),
+                                                       'replacer': file_content.get('replacer', f'{self.default_replacer}{key}{self.default_replacer}'),
                                                        'description': file_content.get('description', '')}})
                 self.has_files = True
         
@@ -133,6 +138,7 @@ class YamlScript:
         self.scripts_dict = {}
         self.files_dict = {}
         self.all_shells = {}
+        self.default_replacer = '#'
         # Индикаторы
         self.status = '' if status_from_lib == 'ERROR' else status_from_lib
         self.has_items = False
@@ -163,7 +169,10 @@ class YamlScript:
                 validation_trigger = (self.status == 'WARNING' or not self.status) and self.status != 'ERROR'
 
             if validation_trigger: 
-                validation = YamlValidator(content, self.msg, self.verbose_validation)
+                validation = YamlValidator(content=content, 
+                                           msg=self.msg, 
+                                           verbose=self.verbose_validation, 
+                                           default_replacer=self.default_replacer)
                 if not validation.status:
                     self.status = 'ERROR'
                     if not self.verbose_validation: 
@@ -184,6 +193,10 @@ class YamlScript:
                     self.tags = [str(tag) for tag in content.get('tags',[])]
                 if type(content.get('arguments', None)) is dict:
                     self.arguments = content.get('arguments', {})
+                    # добавление дефолтных реплейсеры
+                    for i in self.arguments.keys():
+                        if not self.arguments[i].get('replacer', None):
+                            self.arguments[i]['replacer'] = f'{self.default_replacer}{i}{self.default_replacer}'
                 self.__content_parse__(content)
                 
                 
@@ -534,6 +547,7 @@ class YamlScript:
             self.msg.error('Can\'t write to log file', errormsg)
             sys.exit(1)
 
+    # форматирует множественные аргументы
     def __format_multiargs__(self, values: list, format_string: str, join_delimiter: str):
         preout = []
         if format_string:
@@ -542,6 +556,31 @@ class YamlScript:
             preout = [str(value) if value else '' for value in values]
         out = join_delimiter.join(preout)
         return out
+
+    # Возвращает значения аргументов
+    def __get_arg_values__(self, arg: str, script_number: int):
+        out = []
+        preout = []
+        # если идет чтение из файла
+        if arg in self.scripts_dict[script_number]['mode']['readfile']:
+            for file in vars(self.parsed_args)[arg]:
+                try:
+                    with open(file, 'r') as file:
+                        lines_from_file = file.read().splitlines()
+                    preout.extend(lines_from_file)
+                except Exception as errormsg:
+                    self.msg.warning('Can\'t load file', errormsg)
+        else:
+            preout = vars(self.parsed_args)[arg]
+        # если есть мод replace
+        if arg in self.scripts_dict[script_number]['mode']['replace'].keys():
+            for arg_value in preout:
+                replaced = self.scripts_dict[script_number]['mode']['replace'][arg].get(arg_value, arg_value)
+                out.extend(replaced) if type(replaced) is list else out.append(replaced)
+        else:
+            out = preout
+        return out
+
 
     def script_launch(self, logging: str, show_log: bool, script_name: str, script_args: list, code_print=False):
         self.parse_args(script_args, script_name)
@@ -560,20 +599,24 @@ class YamlScript:
                     encoding = self.known_shells['default']['encoding']
                 
                 if code_print:
-                    print(get_code_print_header(path, script_number))
-                
+                    print(get_code_print_header(path, script_number)) 
+
+                # loop режим
                 if self.scripts_dict[script_number]['mode']['loop']:
                     loop_arg = self.scripts_dict[script_number]['mode']['loop']
-                    loop_vars_count = len(vars(self.parsed_args)[loop_arg]) - 1
-                    for i, loop_val in enumerate(vars(self.parsed_args)[loop_arg]):
+                    arg_prevalues = self.__get_arg_values__(loop_arg, script_number)
+                    loop_vars_count = len(arg_prevalues) - 1
+                    
+                    for i, loop_val in enumerate(arg_prevalues):
                         arg_values = {}
                         for key in self.arguments.keys():
-                            arg_values[key] = self.__format_multiargs__([loop_val] if key == loop_arg else vars(self.parsed_args)[key],
+                            arg_values[key] = self.__format_multiargs__([loop_val] if key == loop_arg else self.__get_arg_values__(key, script_number),
                                                                         self.scripts_dict[script_number]['mode']['format'][key],
                                                                         self.scripts_dict[script_number]['mode']['join'][key])
                         
                         builded_script = self.__build_script__(self.scripts_dict[script_number]['script'], arg_values)
                         popen_cmd = [path] + popen_args + [builded_script]
+                        #print(popen_cmd)
                         if code_print:
                             print(builded_script)
                         elif logging:
@@ -595,7 +638,7 @@ class YamlScript:
                 else:
                     arg_values = {}
                     for key in self.arguments.keys():
-                        arg_values[key] = self.__format_multiargs__(vars(self.parsed_args)[key],
+                        arg_values[key] = self.__format_multiargs__(self.__get_arg_values__(key, script_number),
                                                                     self.scripts_dict[script_number]['mode']['format'][key],
                                                                     self.scripts_dict[script_number]['mode']['join'][key])
                     

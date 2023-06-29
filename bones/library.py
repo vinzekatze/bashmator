@@ -1,4 +1,3 @@
-import os
 import json
 import os.path
 import sys
@@ -25,12 +24,13 @@ class Library:
         except OSError:
             self.data = {}
     
-    def __init__(self, path: str, msg, folder_status: bool, known_shells: dict, verbose=False):
+    def __init__(self, path: str, msg, folder_status: bool, known_shells: dict, json_path: str, verbose=False):
         self.msg = msg
         self.path = path
         self.yamls_path = os.path.join(path, 'modules')
         self.files_path = os.path.join(path, 'files')
-        self.jsonpath = os.path.join(path, 'library.json')
+        #self.jsonpath = os.path.join(path, 'library.json')
+        self.jsonpath = json_path
         self.files = {}
         self.lib_changes = []
         self.lib_new = []

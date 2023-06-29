@@ -1,0 +1,14 @@
+author: demo
+description: >-
+  Example of a simple multiple argument
+tags:
+  - help
+  - manual
+  - arguments
+arguments:
+  arg:
+    multiple: true
+    description: random strings
+shell: bash
+script: >-
+  echo 'Input: #arg#'

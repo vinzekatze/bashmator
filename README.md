@@ -45,6 +45,7 @@ pip install -r requirements.txt
 
 ```
 sudo ln -s $(pwd)/bashmator.py /usr/local/bin/bashmator
+sudo ln -s $(pwd)/bashmator.py /usr/local/bin/bshm
 ```
 
 </details>
@@ -444,15 +445,21 @@ arguments:
   ...
 
 mode:
-  loop: <MULTIPLE ARG NAME>
+  loop: <ARG NAME>
   join:
-    <MULTIPLE ARG NAME>: <DELIMITER>
+    <ARG NAME>: <DELIMITER>
     <OTHER ARG>: ...
     ...
   format:
     <ARG NAME>: <.format() TEMPLATE>
     <OTHER ARG>: ...
     ...
+  readfile:
+    - <ARG NAME>
+    ...
+  replace:
+    <ARG NAME>:
+      <VALUE TO REPLACE>: <REPLACEMENT>
 
 shell: <MAIN SHELL SHORT NAME OR PATH>
 script: |- 
@@ -542,13 +549,14 @@ install: |-
 
 Рекомендуется использовать полные названия для позиционных аргументов, и однобуквенные для опций.
 
+`replacer` по умолчанию: `#[ARGUMENT NAME]#`
+
 Общий вид:
 
 ```yaml
 arguments:
   a:
     default: 53
-    replacer: __A__
     description: bla bla bla
   something:
     replacer: __B__
@@ -608,13 +616,13 @@ arguments:
 <details>
   <summary><b>replacer</b></summary>
 
->⚠️ __Обязательный ключ__
-
 Содержит строку, котороя будет заменятья в коде скрипта (ключ `script`) на значение аргумента. Не самое элегантное решение, но позволяет творить интересные трюки в комбинации с `mode: format`.
 
 Реплейсеры в коде скрипта заменяются в том порядке, в каком описаны ключи в `arguments`. После аргументов в код подставляются значения `file_[NUMBER]`, если они есть.
 
-Пример реплейсера и скрипта:
+Если ключ отсутвует либо пуст, то реплейсер принимает значение `#[ARGUMENT NAME]#`
+
+Пример реплейсеров и скрипта:
 
 ```yaml
 arguments:
@@ -669,6 +677,12 @@ mode:
     arg3: ';'
   format: 
     arg1: '{0!r}'
+  readfile:
+    - arg2
+  replace:
+    arg3:
+      val1: value1
+      val2: value2
 ```
 
 Ключи mode:
@@ -689,11 +703,10 @@ shell: bash
 arguments:
   arg1:
     multiple: true
-    replacer: _A_
 mode:
   loop: arg1
 script: >-
-  echo -n _A_; echo ' end'
+  echo -n #arg1#; echo ' end'
 ```
 
 Результат выполнения скрипта c аргументами `1 2 3 4 5`:
@@ -745,9 +758,7 @@ arguments:
   arg1:
     default:
       -
-    replacer: _ARG1_
   arg2:
-    replacer: _ARG2_
     multiple: true
 mode:
   format:
@@ -756,7 +767,7 @@ mode:
     arg2: >-
       {0!r}
 script: >-
-  echo _ARG2_ _ARG1_
+  echo #arg1# #arg2#
 ```
 
 Если запустить скрипт с аргументами `a d c r t`, для исполнения будет сформирован следующий код:
@@ -770,6 +781,71 @@ echo 'a' 'd' 'c' 'r' 't'
 ```bash
 echo 'a' 'd' 'c' 'r' 't' | tee './test.txt'
 ```
+
+</details>
+
+<details>
+  <summary><b>readfile</b></summary>
+
+Содержит список имен аргументов, которые будут интерпритированы как имена файлов.
+
+Данные файлы будут читаться построчно, а считанные строки будут подставляться в скрипт на местро реплейсера.
+
+Пример:
+
+```yaml
+shell: bash
+arguments:
+  arg1:
+    description: test
+mode:
+  readfile:
+    - arg1
+script: >-
+  echo #arg1#
+```
+
+Содержимое файла `some_file.txt`:
+
+```
+one
+two
+three
+```
+
+Если запустить скрипт с аргументом `./some_file.txt`, то для исполнения будет сформирован следующий код:
+
+```bash
+echo one two three
+```
+
+</details>
+
+<details>
+  <summary><b>replace</b></summary>
+
+Подзволяет заменять значения аргументов. Содержит в себе имена аргументов в качестве ключей, которые в свою очередь содержат замены в виде `ключ:значение`.
+
+Пример:
+
+```yaml
+shell: bash
+arguments:
+  arg1:
+    default:
+      - A
+      - B
+      - C
+mode:
+  replace:
+    arg1:
+      A: One
+      B: Two
+script: >-
+  echo #arg1#
+```
+
+В данном примере, когда на вход скрпта в аргумент `--arg1` будет подаваться значение `A`, в скрипт будет подставлено значение `One`, а когда `B` - `Two`. Значение `C` заменено не будет и попадет в скрипт напрямую.
 
 </details>
 
@@ -832,13 +908,14 @@ script: >-
 
 Используется для подстановки полных путей файлов из директории `files` библиотеки.
 
+`replacer` по умолчанию: `#file_[NUMBER]#`
+
 Общий вид:
 
 ```yaml
 file_1:
   description: My Wordlist
   path: dicts/my_wordlist.txt
-  replacer: __MY_LIST__
 file_2:
   description: My Big Script
   path: scripts/big_script.sh
@@ -868,8 +945,6 @@ file_1:
 
 <details>
   <summary><b>replacer</b></summary>
-
->⚠️ __Обязательный ключ__
 
 Работает аналогично ключу `replacer` для `arguments`, но не подвергается форматированию.
 
@@ -970,51 +1045,55 @@ item_2:
 $ bashmator search examples
 Search results:
 
- script name                | status   | tags
-----------------------------+----------+-------------------------
- examples/0_minimal         | OK       |
- examples/1_basic           | OK       | help, manual, basic
- examples/2_positional_args | OK       | help, manual, required,
-                            |          | arguments
- examples/3_options         | OK       | help, manual, options,
-                            |          | flags
- examples/4_multiple        | OK       | help, manual, multiple,
-                            |          | mode
- examples/5_format          | OK       | help, manual, multiple,
-                            |          | mode
- examples/6_files           | OK       | help, manual, files
- examples/7_items           | OK       | help, manual, items
+ script name                  | status   | tags
+------------------------------+----------+-----------------------------
+ examples/args/choice         | OK       | help, manual, arguments
+ examples/args/choice_default | OK       | help, manual, arguments
+ examples/args/default        | OK       | help, manual, arguments
+ examples/args/default_empty  | OK       | help, manual, arguments
+ examples/args/flag           | OK       | help, manual, arguments
+ examples/args/multiple       | OK       | help, manual, arguments
+ examples/args/replacer       | OK       | help, manual, arguments
+ examples/args/simple         | OK       | help, manual, arguments
+ examples/files/replacer      | OK       | help, manual, files
+ examples/files/simple        | OK       | help, manual, files
+ examples/items/default       | OK       | help, manual, items
+ examples/items/mode          | OK       | help, manual, items
+ examples/items/shell         | OK       | help, manual, items
+ examples/items/simple        | OK       | help, manual, items
+ examples/minimal             | OK       |
+ examples/mode/format         | OK       | help, manual, mode
+ examples/mode/format_empty   | OK       | help, manual, mode
+ examples/mode/join           | OK       | help, manual, mode
+ examples/mode/loop           | OK       | help, manual, mode
+ examples/mode/readfile       | OK       | help, manual, mode
+ examples/mode/replace        | OK       | help, manual, mode
+ examples/simple              | OK       | help, manual, informational
 ```
 
 # Пример работы
-Ниже представлен пример запуска скрипта [examples/2_positional_args](library/modules/examples/2_positional_args.yaml):
+Ниже представлен пример запуска скрипта [examples/args/simple](library/modules/examples/args/simple.yaml):
 
 <details>
   <summary>Аргументы командной строки, сгенерированные из YAML</summary>
   
 ```console
-$ bashmator use examples/2_positional_args -h
-usage: examples/2_positional_args [-h] some-pos-arg {choise1,choise2}
+$ bashmator use examples/args/simple -h
+usage: examples/args/simple [-h] arg
 
-The argument properties are set by changing the "default" key value.
+Example of a simple required argument
 
-For a better understanding of what is going on it is recommended to look at the
-file "bashmator/library/modules/examples/2_positional_args.yaml".
-
-................................................................................
+.................................................................
 
 positional arguments:
-  some-pos-arg       if the "default" key is not set or is empty, the argument is required positional
-  {choise1,choise2}  if the "default" key is a list with more than 3 elements and the first element is empty, the
-                     argument is positional with a limited choice of values
+  arg         random string
 
 options:
-  -h, --help         show this help message and exit
+  -h, --help  show this help message and exit
 
 Shell:   bash 
 Author:  demo 
-Tags:    help, manual, required, arguments 
-                                             
+Tags:    help, manual, arguments      
 ```
   
 </details>
@@ -1023,9 +1102,8 @@ Tags:    help, manual, required, arguments
   <summary>Запуск скрипта с включенной опцией логирования</summary>
   
 ```console
-$ bashmator use -o ./example.log examples/2_positional_args blablabla choise1
-some-pos-arg    : blablabla
-pos-choise      : choise1
+$ bashmator use -o example.log examples/args/simple blablabla
+Input: blablabla
 ```
 
 </details>
@@ -1036,27 +1114,25 @@ pos-choise      : choise1
 ```console
 $ cat example.log 
 +-------------------------------------------------------------------------------
-+ Generated by bashmator 1.0.0
++ Generated by bashmator 1.1.1
 +-------------------------------------------------------------------------------
-+ Script name:               examples/2_positional_args (0)
-+ Start time:                2023-03-08 01:53:44 (UTC)
++ Script name:               examples/args/simple (0)
++ Start time:                2023-06-29 16:11:25 (UTC)
 + Shell:                     /usr/bin/bash -c
 +-------------------------------------------------------------------------------
 + Running code
 +-------------------------------------------------------------------------------
 
-echo "some-pos-arg    : blablabla"
-echo "pos-choise      : choise1"
+echo 'Input: blablabla'
 
 +-------------------------------------------------------------------------------
 + Log
 +-------------------------------------------------------------------------------
 
-some-pos-arg    : blablabla
-pos-choise      : choise1
+Input: blablabla
 
 +-------------------------------------------------------------------------------
-+ End time:                  2023-03-08 01:53:44 (UTC)
++ End time:                  2023-06-29 16:11:25 (UTC)
 +-------------------------------------------------------------------------------
 
 ```

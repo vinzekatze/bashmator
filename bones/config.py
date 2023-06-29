@@ -167,13 +167,17 @@ class Configuration:
             self.fix_config()
             self.__get_config__()
 
+    def __get_lib_db_path__(self, lib_name):
+        path = os.path.join(self.lib_db_path, f'{lib_name}.json')
+        return path
 
-    def __init__(self, config_dir:str, default_library_path:str, config_name='settings.json', color=False):
+    def __init__(self, config_dir:str, default_library_path:str, config_name='settings.json', lib_db_path='libraries', color=False):
         self.msg = Msg(color)
         self.color = color
         self.config_dir = config_dir
         self.config_name = config_name
         self.config_path = os.path.join(self.config_dir, self.config_name)
+        self.lib_db_path = os.path.join(self.config_dir, lib_db_path)
         self.default_library_path = default_library_path
         self.__changed__ = False
         self.config = {}
@@ -193,6 +197,15 @@ class Configuration:
         # чтение конфига
         self.__read_json__()
         self.get_config()
+        self.used_lib_db_path = self.__get_lib_db_path__(self.used_library)
+
+        # Создает папку .config/bashmator/libraries, если ее нет
+        if not os.path.exists(self.lib_db_path):
+            try:
+                Path(self.lib_db_path).mkdir(parents=True, exist_ok=True)
+            except Exception as errormsg:
+                self.msg.error(f'Can\'t create \'{self.lib_db_path}\'', errormsg)
+                exit(1)
 
 
     def set_settings_bool(self, option:str, value:str):
@@ -225,16 +238,27 @@ class Configuration:
             
         return out
 
+    # удаление файла
+    def __delete_file__(self, path):
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError as errormsg:
+            self.msg.error(f'Error deleting \'{path}\'', errormsg)
+
+
     def __delete_from_dicts__(self, names:list, names_list:list, root_dict:dict, name_in_message: str, plural_name_in_message: str):
         deleted_names = []
         if 'ALL' in names:
             for name in names_list:
                 del root_dict[name]
+                self.__delete_file__(self.__get_lib_db_path__(name))
             deleted_names = names_list
         else:
             for name in names:
                 if name in names_list:
                     del root_dict[name]
+                    self.__delete_file__(self.__get_lib_db_path__(name))
                     deleted_names.append(name)
                 else:
                     self.msg.error(f'{name_in_message} name error', f'A {name_in_message.lower()} named \'{name}\' not found.')
@@ -266,6 +290,7 @@ class Configuration:
 
     def del_library(self, library_names:list):
         self.__delete_from_dicts__(library_names, self.user_library_list, self.config['libraries'], 'Library', 'Libraries')
+        
 
 
     def get_libraries_table(self):

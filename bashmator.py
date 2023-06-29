@@ -12,7 +12,7 @@ from bones.yamlscript import YamlScript
 from bones.library import Library
 from bones.config import Configuration
 
-__version__ = "1.0.1"
+__version__ = "1.1.1"
 __programm_location__ = os.path.dirname(os.path.realpath(__file__))
 __default_lib_path__ = os.path.join(__programm_location__,'library')
 __config_location__ = user_config_dir('bashmator')
@@ -39,7 +39,8 @@ def command_use(allargs):
     mainlib = Library(path=settings_json.used_library_path, 
                       msg=settings_json.msg, 
                       folder_status=settings_json.used_library_status,
-                      known_shells=settings_json.shell_dict) # Загрузка 'library.json'
+                      known_shells=settings_json.shell_dict,
+                      json_path=settings_json.used_lib_db_path) # Загрузка 'library.json'
     if settings_json.auto_scan:
         mainlib.file_search()
         mainlib.check_changes()
@@ -79,7 +80,8 @@ def command_search(allargs):
     mainlib = Library(path=settings_json.used_library_path, 
                       msg=settings_json.msg, 
                       folder_status=settings_json.used_library_status,
-                      known_shells=settings_json.shell_dict) # Загрузка 'library.json'
+                      known_shells=settings_json.shell_dict,
+                      json_path=settings_json.used_lib_db_path) # Загрузка 'library.json'
     
     if settings_json.auto_scan:
         mainlib.file_search()
@@ -125,6 +127,7 @@ def library_use(allargs):
                 msg=settings_json.msg,
                 folder_status=settings_json.used_library_status,
                 known_shells=settings_json.shell_dict,
+                json_path=settings_json.used_lib_db_path,
                 verbose=True) # Загрузка 'library.json'
 
 def library_scan(allargs):
@@ -132,6 +135,7 @@ def library_scan(allargs):
                       msg=settings_json.msg,
                       folder_status=settings_json.used_library_status,
                       known_shells=settings_json.shell_dict,
+                      json_path=settings_json.used_lib_db_path,
                       verbose=True) # Загрузка 'library.json'
     if allargs.rebuild_lib: mainlib.data = {}
     mainlib.file_search()

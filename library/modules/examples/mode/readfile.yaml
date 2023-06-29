@@ -1,0 +1,16 @@
+author: demo
+description: >-
+  Example of a readfile mode
+tags:
+  - help
+  - manual
+  - mode
+arguments:
+  arg:
+    description: file to read
+mode:
+  readfile:
+    - arg
+shell: bash
+script: >-
+  echo "Input: #arg#"

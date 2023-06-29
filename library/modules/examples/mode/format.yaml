@@ -1,0 +1,16 @@
+author: demo
+description: >-
+  Example of a format mode
+tags:
+  - help
+  - manual
+  - mode
+arguments:
+  arg:
+    description: random string
+mode:
+  format:
+    arg: 'string {!r} was formated'
+shell: bash
+script: >-
+  echo "Input: #arg#"

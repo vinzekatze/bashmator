@@ -75,17 +75,18 @@ class YamlValidator:
                                               f'Value of the \'{self.msg.c("default", "_B")}\' key must be a string, an integer or list.', 
                                               last_check)
             if type(content.get('default', None)) is list:
+                list_len = len(content.get('default', []))
                 for i, value in enumerate(content.get('default', [])):
-                    can_be_empty = True if i == 0 else False
+                    can_be_empty = True if list_len <= 2 or i == 0 else False
                     out = self.__validate_argument_default__(default_status, argument, value, can_be_empty) and out
             else:
                 out = self.__validate_argument_default__(default_status, argument, content.get('default', None)) and out
                     
             out = self.check_value(content.get('replacer', None), 
                                                [str], 
-                                               False, 
+                                               True, 
                                                f'Invalid argument \'{argument}\' key value', 
-                                               f'The key \'{self.msg.c("replacer", "_B")}\' is required and must contain a string value.', 
+                                               f'The key \'{self.msg.c("replacer", "_B")}\' must contain a string value.', 
                                                last_check) and out
             out = self.check_value(content.get('description', None),
                                                   [str],
@@ -134,9 +135,9 @@ class YamlValidator:
                                            last_check) and out
             out = self.check_value(content.get('replacer', None),
                                            [str],
-                                           False,
+                                           True,
                                            f'Invalid key value at \'{key}\'',
-                                           f'The key \'{self.msg.c("replacer", "_B")}\' is required and must contain a string value.',
+                                           f'The key \'{self.msg.c("replacer", "_B")}\' must contain a string value.',
                                            last_check) and out
             out = self.check_value(content.get('description', None),
                                            [str],
@@ -145,16 +146,6 @@ class YamlValidator:
                                            f'Value of the \'{self.msg.c("description", "_B")}\' key must be a string.',
                                            last_check) and out
             self.mark_unknowns(['path', 'replacer', 'description'], content, f'\'{key}\'')
-        return out
-
-
-    def check_argument_multiple(self, last_check: bool, argument, source, mode_key):
-        out = last_check
-        if last_check and self.arguments_status:
-            if not self.content['arguments'][argument].get('multiple', False):
-                out = False
-                self.call_yaml_error(f'Invalid \'mode\':\'{mode_key}\' key value at {source}', 
-                                     f'The argument \'{argument}\' is not multiple.')
         return out
 
 
@@ -171,6 +162,7 @@ class YamlValidator:
     def validate_mode_key(self, last_check: bool, content, source: str):
         out = last_check
         if last_check and content and self.arguments_status:
+            # валидация loop
             check_loop = self.check_value(content.get('loop', None),
                                           [str],
                                           True,
@@ -179,10 +171,22 @@ class YamlValidator:
                                           last_check)
             check_loop_exist = self.check_argument_exist(check_loop, content.get('loop', None), source, 'loop')
             if content.get('loop', None):
-                out = self.check_argument_multiple(check_loop_exist, content.get('loop', None), source, 'loop')
-            else:
                 out = check_loop_exist
             
+            # валидация readfile
+            check_readfile = self.check_value(content.get('readfile', []),
+                                              [list],
+                                              False,
+                                              f'Invalid \'mode\' key value at {source}',
+                                              f'The \'{self.msg.c("readfile", "_B")}\' key must contain the names of the arguments as list.',
+                                              last_check)
+            if check_readfile and type(content.get('readfile', {})) is list:
+                for argument in content.get('readfile', []):
+                    out = self.check_argument_exist(check_readfile, argument, source, 'readfile') and out
+            else:
+                out = check_readfile and out
+
+            # валидация join
             check_join = self.check_value(content.get('join', {}),
                                           [dict],
                                           False,
@@ -192,16 +196,16 @@ class YamlValidator:
             if check_join and type(content.get('join', {})) is dict:
                 for argument in content.get('join', {}).keys():
                     exist_status = self.check_argument_exist(check_join, argument, source, 'join')
-                    multiple_status = self.check_argument_multiple(exist_status, argument, source, 'join')
                     out = self.check_value(content['join'][argument],
                                            [str],
                                            True,
                                            f'Invalid \'mode\':\'join\':\'{argument}\' key value at {source}',
                                            'The value must be a string.',
-                                           multiple_status) and out
+                                           exist_status) and out
             else:
                 out = check_join and out
 
+            # валидация format
             check_format = self.check_value(content.get('format', {}),
                                            [dict],
                                            False,
@@ -224,8 +228,47 @@ class YamlValidator:
                         except Exception:
                             out = self.call_yaml_error(f'Invalid \'mode\':\'format\':\'{argument}\' key value at {source}',
                                                        f'Applying the \'.format()\' function to the \'{formated_string}\' line ended with an error. It is recommended to use placeholder ' + '\'{0}\'.') and out
-            
-            self.mark_unknowns(['loop', 'format', 'join'], content.keys(), f'\'mode\' at {source}')
+
+            # валидация replace
+            check_replace_mode = self.check_value(content.get('replace', {}),
+                                            [dict],
+                                            False,
+                                            f'Invalid \'mode\' key value at {source}',
+                                            f'The \'{self.msg.c("replace", "_B")}\' key must contain the names of the arguments as keys.',
+                                            last_check)
+            if check_replace_mode and type(content.get('replace', {})) is dict:
+                for argument in content.get('replace', {}).keys():
+                    exist_status = self.check_argument_exist(check_replace_mode, argument, source, 'replace')
+                    type_status = self.check_value(content['replace'][argument],
+                                                   [dict],
+                                                   False,
+                                                   f'Invalid \'mode\':\'replace\':\'{argument}\' key value at {source}',
+                                                   'The value should be a dictionary, where the key is a searched value and the value of the key is a substitution.',
+                                                   exist_status)
+                    if type_status:
+                        for replacer_mode in content['replace'].get(argument, {}).keys():
+                            out = self.check_value(content['replace'][argument].get(replacer_mode, ''),
+                                                               [list, str, int],
+                                                               True,
+                                                               f'Invalid \'mode\':\'replace\':\'{argument}\':\'{replacer_mode}\' key value at {source}',
+                                                               'The value should be a string, integer or list of strings and integers',
+                                                               type_status) and out
+                            # Проверка, если в заменителе лист
+                            if type(content['replace'][argument].get(replacer_mode, '')) is list:
+                                for element in content['replace'][argument].get(replacer_mode, []):
+                                    out = self.check_value(element,
+                                                           [str, int],
+                                                           False,
+                                                           f'Invalid \'mode\':\'replace\':\'{argument}\':\'{replacer_mode}\' key value at {source}',
+                                                           f'Value \'{self.msg.c(element, "_B")}\' is not a string or an integer.',
+                                                           type_status) and out
+                    else:
+                        out = type_status and out
+            else:
+                out = check_replace_mode and out                    
+        
+
+            self.mark_unknowns(['loop', 'format', 'join', 'readfile', 'replace'], content.keys(), f'\'mode\' at {source}')
         return out
 
 
@@ -380,12 +423,12 @@ class YamlValidator:
                 
                 count = 0
                 for key in self.content.get('arguments', {}).keys():
-                    all_replacers.update({count: {'replacer': self.content['arguments'][key].get('replacer', ''),
+                    all_replacers.update({count: {'replacer': self.content['arguments'][key].get('replacer', f'{self.default_replacer}{key}{self.default_replacer}'),
                                               'name': f'argument \'{key}\''
                                               }})
                     count += 1
                 for key in files_keys:
-                    all_replacers.update({count: {'replacer': self.content[key].get('replacer', ''),
+                    all_replacers.update({count: {'replacer': self.content[key].get('replacer', f'{self.default_replacer}{key}{self.default_replacer}'),
                                               'name': f'\'{key}\''
                                               }})
                     count += 1
@@ -402,10 +445,11 @@ class YamlValidator:
                 self.mark_unknowns(known_keys, self.content.keys(), 'general structure')
 
         
-    def __init__(self, content, msg, verbose=True):
+    def __init__(self, content, msg, default_replacer, verbose=True):
         self.msg = msg
         self.content = content
         self.verbose = verbose
+        self.default_replacer = default_replacer
         self.status = True
         self.no_warnings = True
         # маркеры

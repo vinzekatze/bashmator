@@ -1,0 +1,22 @@
+author: demo
+description: >-
+  Example of a replace mode
+tags:
+  - help
+  - manual
+  - mode
+arguments:
+  arg:
+    default:
+      - 
+      - cat
+      - dog
+    description: choise
+mode:
+  replace:
+    arg:
+      cat: kitty
+      dog: puppy
+shell: bash
+script: >-
+  echo "Input: #arg#"

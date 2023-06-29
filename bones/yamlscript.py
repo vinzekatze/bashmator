@@ -303,7 +303,7 @@ class YamlScript:
                                      required=False,
                                      default=[def_val],
                                      action='store_const',
-                                     const=[str(choice_list[1])],
+                                     const=[] if not choice_list[1] else [str(choice_list[1])],
                                      )
             elif len(arg_defaults) == 2 and multiple:
                 options.add_argument(arg_option_name,
@@ -312,7 +312,7 @@ class YamlScript:
                                      required=False,
                                      default=[] if not choice_list[0] else [str(choice_list[0])],
                                      action='append_const',
-                                     const=str(choice_list[1]),
+                                     const=None if not choice_list[1] else str(choice_list[1]),
                                      )
             elif choice_list[0]:
                 options.add_argument(arg_option_name,
@@ -371,7 +371,7 @@ class YamlScript:
                                      required=False,
                                      default=[def_val],
                                      action='store_const',
-                                     const=[str(choice_list[1])],
+                                     const=[] if not choice_list[1] else [str(choice_list[1])],
                                      )
             elif len(arg_defaults) == 2 and multiple:
                 options.add_argument(arg_option_name,
@@ -380,7 +380,7 @@ class YamlScript:
                                      required=False,
                                      default=[] if not choice_list[0] else [str(choice_list[0])],
                                      action='append_const',
-                                     const=str(choice_list[1]),
+                                     const=None if not choice_list[1] else str(choice_list[1]),
                                      )
             elif choice_list[0]:
                 options.add_argument(arg_option_name,

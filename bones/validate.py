@@ -100,7 +100,30 @@ class YamlValidator:
                                                f'Invalid argument \'{argument}\' key value',
                                                f'Value of the \'{self.msg.c("multiple", "_B")}\' key can be \'true\' or \'false\'.',
                                                last_check) and out
-            self.mark_unknowns(['default', 'replacer', 'description', 'multiple'], content.keys(), f'\'arguments\':\'{argument}\'')
+            out = self.check_value(content.get('metavar', None), 
+                                               [str], 
+                                               True, 
+                                               f'Invalid argument \'{argument}\' key value', 
+                                               f'The key \'{self.msg.c("metavar", "_B")}\' must contain a string value.', 
+                                               last_check) and out
+            # валидация regex
+            regex_check = self.check_value(content.get('regex', None), 
+                                           [str], 
+                                           True, 
+                                           f'Invalid argument \'{argument}\' key value', 
+                                           f'The key \'{self.msg.c("regex", "_B")}\' must contain a string value.', 
+                                           last_check)
+            if regex_check and content.get('regex', None):
+                try:
+                    _ = re_compile(content['regex'])
+                except Exception as ermsg:
+                    self.call_yaml_error(f'Argument \'{argument}\' regex error', ermsg)
+                    self.msg.text_message(content['regex'])
+                    out = False
+                else:
+                    out = True and out
+
+            self.mark_unknowns(['default', 'replacer', 'description', 'multiple', 'metavar', 'regex'], content.keys(), f'\'arguments\':\'{argument}\'')
         return out
 
     def validate_arguments(self, last_check: bool):
@@ -228,6 +251,29 @@ class YamlValidator:
                         except Exception:
                             out = self.call_yaml_error(f'Invalid \'mode\':\'format\':\'{argument}\' key value at {source}',
                                                        f'Applying the \'.format()\' function to the \'{formated_string}\' line ended with an error. It is recommended to use placeholder ' + '\'{0}\'.') and out
+            # валидация pformat
+            check_pformat = self.check_value(content.get('pformat', {}),
+                                           [dict],
+                                           False,
+                                           f'Invalid \'mode\' key value at {source}',
+                                           f'The \'{self.msg.c("pformat", "_B")}\' key must contain the names of the arguments as keys.',
+                                           last_check)
+            if check_pformat and type(content.get('pformat', {})) is dict:
+                for argument in content.get('pformat', {}).keys():
+                    exist_status = self.check_argument_exist(check_pformat, argument, source, 'pformat')
+                    type_status = self.check_value(content['pformat'][argument],
+                                                   [str],
+                                                   True,
+                                                   f'Invalid \'mode\':\'pformat\':\'{argument}\' key value at {source}',
+                                                   'The value must be a string.',
+                                                   exist_status)
+                    if type_status:
+                        try:
+                            formated_string = content['pformat'][argument]
+                            _ = formated_string.format('TEST')
+                        except Exception:
+                            out = self.call_yaml_error(f'Invalid \'mode\':\'pformat\':\'{argument}\' key value at {source}',
+                                                       f'Applying the \'.format()\' function to the \'{formated_string}\' line ended with an error. It is recommended to use placeholder ' + '\'{0}\'.') and out
 
             # валидация replace
             check_replace_mode = self.check_value(content.get('replace', {}),
@@ -266,9 +312,8 @@ class YamlValidator:
                         out = type_status and out
             else:
                 out = check_replace_mode and out                    
-        
 
-            self.mark_unknowns(['loop', 'format', 'join', 'readfile', 'replace'], content.keys(), f'\'mode\' at {source}')
+            self.mark_unknowns(['loop', 'format', 'pformat', 'join', 'readfile', 'replace'], content.keys(), f'\'mode\' at {source}')
         return out
 
 
@@ -295,7 +340,7 @@ class YamlValidator:
                                    f'The \'{self.msg.c("shell", "_B")}\' key must contain a string value and be present in each item if the main shell is not specified.',
                                    last_check) and out
             
-            if content.get('mode', None) and not self.arguments_status:
+            if content.get('mode', None) and not self.content.get('arguments'):
                 out = False
                 self.call_yaml_error(f'Invalid key at \'{key}\'', f'It is not possible to use \'{self.msg.c("mode", "_B")}\' functions without arguments.')
             
@@ -390,7 +435,7 @@ class YamlValidator:
                     self.items_status = True
             
             # Проверка главного mode
-            if self.content.get('mode', None) and not self.arguments_status:
+            if self.content.get('mode', None) and not self.content.get('arguments'):
                 self.call_yaml_error(f'Invalid key at general structure', f'It is not possible to use \'{self.msg.c("mode", "_B")}\' functions without arguments.')
             
             mode_check = self.check_value(self.content.get('mode', {}),

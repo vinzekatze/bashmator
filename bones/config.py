@@ -1,3 +1,4 @@
+import sys
 import os.path
 import json
 from ast import literal_eval
@@ -33,7 +34,7 @@ class Configuration:
                 json.dump(self.config, json_file, sort_keys=True)
         except OSError as errormsg:
             self.msg.error(f'Error writing \'{self.config_path}\'', errormsg)
-            exit(1)
+            sys.exit(1)
     
     def __read_json__(self):
         try:
@@ -45,7 +46,7 @@ class Configuration:
             self.msg.warning(f'Error reading \'{self.config_name}\'', 'The default settings have been restored.')
         except OSError as errormsg:
             self.msg.error(f'Error reading \'{self.config_path}\'', errormsg)
-            exit(1)
+            sys.exit(1)
     
     # добавление недостающих ключей
     def __fix_dict_add__(self, target_dict:dict, default_dict:dict):
@@ -191,7 +192,7 @@ class Configuration:
                 self.msg.message(f'Configuration file \'{self.config_name}\' was created.')
             except Exception as errormsg:
                 self.msg.error(f'Can\'t create \'{self.config_dir}\'', errormsg)
-                exit(1)
+                sys.exit(1)
         elif self.__changed__:
             self.__write_json__()
         # чтение конфига
@@ -205,7 +206,7 @@ class Configuration:
                 Path(self.lib_db_path).mkdir(parents=True, exist_ok=True)
             except Exception as errormsg:
                 self.msg.error(f'Can\'t create \'{self.lib_db_path}\'', errormsg)
-                exit(1)
+                sys.exit(1)
 
 
     def set_settings_bool(self, option:str, value:str):
@@ -329,10 +330,10 @@ class Configuration:
             parsed_popen_args = literal_eval(shell_popen_args)
             for arg in parsed_popen_args:
                 if type(arg) is not str or not arg:
-                    self.msg.error('Popen arguments list read error', f'Argument value \'{arg}\' is not a string.')
+                    self.msg.error('Popen arguments list read error', f'Argument value \'{arg}\' is not a string.', exit_code=2)
                     set_is_ok = False
         except Exception as errormsg:
-            self.msg.error('Popen arguments list read error', errormsg)
+            self.msg.error('Popen arguments list read error', errormsg, exit_code=2)
             set_is_ok = False
         # Проверка кодировки
         if not shell_encoding:

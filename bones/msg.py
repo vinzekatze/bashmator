@@ -1,3 +1,4 @@
+import sys
 from tabulate import tabulate
 from textwrap import wrap
 from math import floor
@@ -57,6 +58,7 @@ def color(text: str, color_sym, min_length=0, bshm_color=False):
 class Msg:
     def __init__(self, bshm_color=False):
         self.bshm_color = bshm_color
+        self.exit_code = 0
     
     def change_color_set(self, bshm_color):
         self.bshm_color = bshm_color
@@ -132,45 +134,58 @@ class Msg:
         out = tabulate(formated_data, headers="firstrow", tablefmt="presto")
         return out
 
+    def myprint(self, text):
+        print(text,
+              file=sys.stderr)
+
     def message(self, text):
         print(self.c('[MESSAGE]','_B',messages_size), 
             text,
-            sep='')
+            sep='',
+            file=sys.stderr)
         
     def text_message(self, text):
         print(self.c('','_B',messages_size), 
             text,
-            sep='')
+            sep='',
+            file=sys.stderr)
     
-    def error(self, name, info):
+    def error(self, name, info, exit_code=1):
         print(self.c('[ERROR]','RB',messages_size), 
             self.c(f'[{name}]: ','R',0),
             info,
-            sep='')
+            sep='',
+            file=sys.stderr)
+        self.exit_code = exit_code
     
     def warning(self, name, info):
         print(self.c('[WARNING]','YB',messages_size), 
             self.c(f'[{name}]: ','Y',0),
             info,
-            sep='')
+            sep='',
+            file=sys.stderr)
 
-    def yaml_error(self, name, info):
+    def yaml_error(self, name, info, exit_code=2):
         print(self.c('[YAML ERROR]','RB',messages_size), 
             self.c(f'[{name}]: ','R',0),
             info,
-            sep='')
+            sep='',
+            file=sys.stderr)
+        self.exit_code = exit_code
 
     def yaml_warning(self, name, info):
         print(self.c('[YAML WARNING]','YB',messages_size), 
             self.c(f'[{name}]: ','Y',0),
             info,
-            sep='')
+            sep='',
+            file=sys.stderr)
 
     def warning_file(self, path):
         print(self.c('','_',messages_size,),
             self.c('[FILE]: ','_B',0),
             path,
-            sep='')
+            sep='',
+            file=sys.stderr)
 
     def get_logo_art(self, version):
         if self.bshm_color: 

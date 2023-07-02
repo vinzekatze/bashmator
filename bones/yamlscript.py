@@ -11,7 +11,7 @@ from time import time
 from bones.msg import wrap_text
 from bones.funcs import none_controll, make_range
 from bones.funcs import get_main_header, get_local_time, get_code_log, get_alt_code_cog, get_log_header, get_log_end, get_code_print_header
-from bones.validate import YamlValidator
+from bones.validate import YamlValidator, re_compile
 
 breaker_time = 1
 
@@ -32,14 +32,15 @@ class YamlScript:
         out = copy.deepcopy(self.main_mode)
         out.update({'loop': mode.get('loop', self.main_mode['loop'])})
         out.update({'readfile': mode.get('readfile', self.main_mode['readfile'])})
-        #main_mode_copy = self.main_mode.copy()
         for arg in self.arguments.keys():
             join_val = mode.get('join',{}).get(arg, None)
             format_val = mode.get('format',{}).get(arg, None)
             replace_val = mode.get('replace',{}).get(arg, {})
+            pformat_val = mode.get('pformat',{}).get(arg, None)
             out['join'][arg] = join_val if join_val else self.main_mode['join'][arg]
             out['format'][arg] = format_val if format_val else self.main_mode['format'][arg]
             out['replace'][arg] = replace_val if replace_val else self.main_mode['replace'][arg]
+            out['pformat'][arg] = pformat_val if pformat_val else self.main_mode['pformat'][arg]
         return out
     
     def __content_parse__(self, content):
@@ -59,15 +60,22 @@ class YamlScript:
 
         # Main mode сборка
         mode = content.get('mode', {})
-        self.main_mode.update({'loop': mode.get('loop', None), 'readfile': mode.get('readfile', []), 'join': {}, 'format': {}, 'replace': {}})
+        self.main_mode.update({'loop': mode.get('loop', None),
+                               'readfile': mode.get('readfile', []),
+                               'join': {},
+                               'format': {},
+                               'replace': {},
+                               'pformat': {}})
         for arg in self.arguments.keys():
             join_val = mode.get('join',{}).get(arg, None)
             format_val = mode.get('format',{}).get(arg, None)
             replace_val = mode.get('replace',{}).get(arg, {})
+            pformat_val = mode.get('pformat',{}).get(arg, None)
             self.main_mode['join'][arg] = join_val if join_val is not None else ' '
             self.main_mode['format'][arg] = format_val if format_val else ''
             self.main_mode['replace'][arg] = replace_val if replace_val else {}
-
+            self.main_mode['format'][arg] = format_val if format_val else ''
+            self.main_mode['pformat'][arg] = pformat_val if pformat_val else ''
 
         # Формирование словаря доступных скриптов
         if content.get('script',''):
@@ -139,8 +147,10 @@ class YamlScript:
         self.files_dict = {}
         self.all_shells = {}
         self.default_replacer = '#'
+        self.args_regex = {}
         # Индикаторы
         self.status = '' if status_from_lib == 'ERROR' else status_from_lib
+        self.flow_status = True
         self.has_items = False
         self.has_main_script = False
         self.has_files = False
@@ -265,17 +275,19 @@ class YamlScript:
                 self.items_launch_set = make_range(self.parsed_args.items_launch_set)
             except ValueError:             
                 self.parser.print_usage()
-                print(f'Failed to resolve execution sequence "{self.parsed_args.items_launch_set}"')
-                print(self.items_table_parced)
-                sys.exit(1)
+                self.msg.myprint(f'{self.name}: error: argument --item: failed to resolve execution sequence \'{self.parsed_args.items_launch_set}\'')
+                self.msg.myprint(self.items_table_parced)
+                self.msg.exit_code = 2
+                sys.exit(self.msg.exit_code)
             # Проверка наличия скриптов в диапазоне
             else:
                 for item in self.items_launch_set:
                     if item not in self.scripts_dict:
                         self.parser.print_usage()
-                        print(f'Execution sequence "{self.parsed_args.items_launch_set}" out of range\n')
-                        print(self.items_table_parced)
-                        sys.exit(1)
+                        self.msg.myprint(f'{self.name}: error: argument --item: execution sequence \'{self.parsed_args.items_launch_set}\' out of range\n')
+                        self.msg.myprint(self.items_table_parced)
+                        self.msg.exit_code = 2
+                        sys.exit(self.msg.exit_code)
 
     def __gen_args_regular_mode__(self, arg, options: argparse.ArgumentParser, required: argparse.ArgumentParser):
         arg_option_name = f'--{str(arg)}' if len(str(arg))>1 else f'-{str(arg)}'
@@ -283,6 +295,7 @@ class YamlScript:
         arg_defaults = self.arguments[arg].get('default', None)
         help_text = self.arguments[arg].get('description', '') if self.arguments[arg].get('description', '') else ''
         multiple = self.arguments[arg].get('multiple', False)
+        arg_metavar = self.arguments[arg].get('metavar', 'VAL')
 
         if type(arg_defaults) is list and arg_defaults:
             choice_list = [variant for variant in self.arguments[arg]['default']]
@@ -291,7 +304,7 @@ class YamlScript:
                 options.add_argument(arg_option_name,
                                      dest=str(arg),
                                      help=help_text + f' (default: \'{def_val}\')' if def_val else help_text,
-                                     metavar='VAL',
+                                     metavar=arg_metavar,
                                      required=False,
                                      default=[def_val],
                                      nargs='+' if multiple else 1
@@ -340,7 +353,7 @@ class YamlScript:
                                  help=help_text  + f' (default: \'{str(arg_defaults)}\')',
                                  required=False,
                                  default=[str(arg_defaults)],
-                                 metavar='VAL',
+                                 metavar=arg_metavar,
                                  nargs='+' if multiple else 1
                                  )
             
@@ -351,6 +364,7 @@ class YamlScript:
         arg_defaults = self.arguments[arg].get('default', None)
         help_text = self.arguments[arg].get('description', '') if self.arguments[arg].get('description', '') else ''
         multiple = self.arguments[arg].get('multiple', False)
+        arg_metavar = self.arguments[arg].get('metavar', 'VAL')
 
         if type(arg_defaults) is list and arg_defaults:
             choice_list = [variant for variant in self.arguments[arg]['default']]
@@ -359,7 +373,7 @@ class YamlScript:
                 options.add_argument(arg_option_name,
                                      dest=str(arg),
                                      help=help_text + f' (default: \'{def_val}\')' if def_val else help_text,
-                                     metavar='VAL',
+                                     metavar=arg_metavar,
                                      required=False,
                                      default=[def_val],
                                      nargs='+' if multiple else 1
@@ -404,7 +418,7 @@ class YamlScript:
                                   dest=str(arg),
                                   help=help_text,
                                   required=True,
-                                  metavar='VAL',
+                                  metavar=arg_metavar,
                                   nargs='+' if multiple else 1
                                   )
         else:
@@ -413,7 +427,7 @@ class YamlScript:
                                  help=help_text  + f' (default: \'{str(arg_defaults)}\')',
                                  required=False,
                                  default=[str(arg_defaults)],
-                                 metavar='VAL',
+                                 metavar=arg_metavar,
                                  nargs='+' if multiple else 1
                                  )
 
@@ -452,8 +466,6 @@ class YamlScript:
                             self.__gen_args_multiple_mode__(arg, script_options_group, script_arguments_group)
                         else:
                             self.__gen_args_regular_mode__(arg, script_options_group, script_arguments_group)
-
-                            
 
                 script_options_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
                 self.parsed_args = self.parser.parse_args(script_args) 
@@ -548,13 +560,19 @@ class YamlScript:
             sys.exit(1)
 
     # форматирует множественные аргументы
-    def __format_multiargs__(self, values: list, format_string: str, join_delimiter: str):
+    def __format_multiargs__(self, values: list, format_string: str, join_delimiter: str, pformat_string: str):
         preout = []
+        # обработка каждого значения
         if format_string:
             preout = [format_string.format(str(value)) if value else '' for value in values]
         else:
             preout = [str(value) if value else '' for value in values]
-        out = join_delimiter.join(preout)
+        preout2 = join_delimiter.join(preout)
+        # обработка финальной строки
+        if pformat_string:
+            out = pformat_string.format(preout2) if preout2 else ''
+        else:
+            out = preout2
         return out
 
     # Возвращает значения аргументов
@@ -564,14 +582,18 @@ class YamlScript:
         # если идет чтение из файла
         if arg in self.scripts_dict[script_number]['mode']['readfile']:
             for file in vars(self.parsed_args)[arg]:
-                try:
-                    with open(file, 'r') as file:
-                        lines_from_file = file.read().splitlines()
-                    preout.extend(lines_from_file)
-                except Exception as errormsg:
-                    self.msg.warning('Can\'t load file', errormsg)
+                if file:
+                    try:
+                        with open(file, 'r') as file:
+                            lines_from_file = file.read().splitlines()
+                        preout.extend(lines_from_file)
+                    except Exception as errormsg:
+                        self.msg.myprint('{}: error: argument {}: {}'.format(self.name, f'\'{arg}\'', errormsg))
+                        self.msg.exit_code = 1
+                        self.flow_status = False
         else:
             preout = vars(self.parsed_args)[arg]
+
         # если есть мод replace
         if arg in self.scripts_dict[script_number]['mode']['replace'].keys():
             for arg_value in preout:
@@ -579,16 +601,28 @@ class YamlScript:
                 out.extend(replaced) if type(replaced) is list else out.append(replaced)
         else:
             out = preout
+        # валидация значений с помощью regex
+        if self.args_regex.get(arg, None):
+            for val in out:
+                if val and not self.args_regex[arg].fullmatch(val):
+                    self.msg.myprint('{}: error: argument {}: {}'.format(self.name, f'\'{arg}\'', f'invalid value \'{val}\''))
+                    self.msg.exit_code = 1
+                    self.flow_status = False   
         return out
 
 
     def script_launch(self, logging: str, show_log: bool, script_name: str, script_args: list, code_print=False):
         self.parse_args(script_args, script_name)
         if self.status != 'ERROR':
+            # компил regex для аргументов
+            for arg in self.arguments.keys():
+                regex_str = self.arguments[arg].get('regex', None)
+                self.args_regex[arg] = re_compile(regex_str) if regex_str else None   
+            # Запуск скриптов
             for script_number in self.items_launch_set:    
                 if self.scripts_dict[script_number]['shell'] == 'default' or not self.scripts_dict[script_number]['shell']:
-                    self.msg.error('Can\'t run script', 'Shell is not defined.')
-                    exit(1)
+                    self.msg.error(f'Can\'t run script ({script_number})', 'Shell is not defined.')
+                    self.flow_status = False
                 elif self.scripts_dict[script_number]['shell'] in self.known_shells.keys(): 
                     path = self.known_shells[self.scripts_dict[script_number]['shell']]['path']
                     popen_args = self.known_shells[self.scripts_dict[script_number]['shell']]['popen_args']
@@ -597,7 +631,6 @@ class YamlScript:
                     path = self.scripts_dict[script_number]['shell']
                     popen_args = self.known_shells['default']['popen_args']
                     encoding = self.known_shells['default']['encoding']
-                
                 if code_print:
                     print(get_code_print_header(path, script_number)) 
 
@@ -612,14 +645,15 @@ class YamlScript:
                         for key in self.arguments.keys():
                             arg_values[key] = self.__format_multiargs__([loop_val] if key == loop_arg else self.__get_arg_values__(key, script_number),
                                                                         self.scripts_dict[script_number]['mode']['format'][key],
-                                                                        self.scripts_dict[script_number]['mode']['join'][key])
+                                                                        self.scripts_dict[script_number]['mode']['join'][key],
+                                                                        self.scripts_dict[script_number]['mode']['pformat'][key])
                         
                         builded_script = self.__build_script__(self.scripts_dict[script_number]['script'], arg_values)
                         popen_cmd = [path] + popen_args + [builded_script]
                         #print(popen_cmd)
-                        if code_print:
+                        if code_print and self.flow_status:
                             print(builded_script)
-                        elif logging:
+                        elif logging and self.flow_status:
                             self.execute_and_log(logging=logging,
                                                 show_log=show_log,
                                                 popen_cmd=popen_cmd,
@@ -627,7 +661,7 @@ class YamlScript:
                                                 item=script_number,
                                                 new_log=True if i == 0 else False,
                                                 last_log=True if i == loop_vars_count else False)
-                        else:
+                        elif self.flow_status:
                             self.execute(show_log=show_log,
                                         popen_cmd=popen_cmd,
                                         item=script_number,
@@ -640,19 +674,20 @@ class YamlScript:
                     for key in self.arguments.keys():
                         arg_values[key] = self.__format_multiargs__(self.__get_arg_values__(key, script_number),
                                                                     self.scripts_dict[script_number]['mode']['format'][key],
-                                                                    self.scripts_dict[script_number]['mode']['join'][key])
+                                                                    self.scripts_dict[script_number]['mode']['join'][key],
+                                                                    self.scripts_dict[script_number]['mode']['pformat'][key])
                     
                     builded_script = self.__build_script__(self.scripts_dict[script_number]['script'], arg_values)
                     popen_cmd = [path] + popen_args + [builded_script]
-                    if code_print:
+                    if code_print and self.flow_status:
                         print(builded_script)
-                    elif logging:
+                    elif logging and self.flow_status:
                         self.execute_and_log(logging=logging,
                                             show_log=show_log,
                                             popen_cmd=popen_cmd,
                                             shell_encoding=encoding,
                                             item=script_number)
-                    else:
+                    elif self.flow_status:
                         self.execute(show_log=show_log,
                                     popen_cmd=popen_cmd,
                                     item=script_number)

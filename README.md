@@ -2,7 +2,7 @@
   <img src="static/bashmator.png" alt="bshm" width="500px">
   <br>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/github/release/vinzekatze/bashmator?style=flat-square"></a>
-  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3-blue.svg?style=flat-square&logo=python"></a>
+  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg?style=flat-square&logo=python"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/linux-✔️-green.svg?style=flat-square&logo=linux&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/macos-✔️-green.svg?style=flat-square&logo=macos&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/win-✔️%20%5Bnot%20tested%20enough%5D-orange.svg?style=flat-square&logo=windows"></a>
@@ -437,29 +437,35 @@ install: <INSTALLATION INFORMATION>
 arguments:
   <ARG NAME>:
     default: <EMPTY, STRING OR LIST>
-    replacer: <VALUE REPLACER>
     description: <TEXT>
+    metavar: <STRING>
     multiple: <TRUE | FALSE>
+    replacer: <VALUE REPLACER>
+    regex: <REGEX STRING>
   <OTHER ARG NAME>:
     ...
   ...
 
 mode:
-  loop: <ARG NAME>
-  join:
-    <ARG NAME>: <DELIMITER>
-    <OTHER ARG>: ...
-    ...
-  format:
-    <ARG NAME>: <.format() TEMPLATE>
-    <OTHER ARG>: ...
-    ...
   readfile:
     - <ARG NAME>
     ...
   replace:
     <ARG NAME>:
       <VALUE TO REPLACE>: <REPLACEMENT>
+  loop: <ARG NAME>
+  format:
+    <ARG NAME>: <.format() TEMPLATE>
+    <OTHER ARG>: ...
+    ...
+  join:
+    <ARG NAME>: <DELIMITER>
+    <OTHER ARG>: ...
+    ...
+  pformat:
+    <ARG NAME>: <.format() TEMPLATE>
+    <OTHER ARG>: ...
+    ...
 
 shell: <MAIN SHELL SHORT NAME OR PATH>
 script: |- 
@@ -555,13 +561,15 @@ install: |-
 
 ```yaml
 arguments:
-  a:
-    default: 53
-    description: bla bla bla
-  something:
+  n:
+    default: 42
+    metavar: NUM
+    regex: \d+
+  arg:
     replacer: __B__
     multiple: true
-    description: blo blo blo
+    description: bla bla bla
+    
 ```
 
 Ключи аргументов:
@@ -614,6 +622,54 @@ arguments:
 </details>
 
 <details>
+  <summary><b>description</b></summary>
+
+Содержит описание назначения аргумента, которое будет выведено при вызове помощи `use <script name> -h` или `use <script name> --help`. Пример:
+
+```yaml
+  arg:
+    description: очень важный аргумент
+```
+
+</details>
+
+<details>
+  <summary><b>metavar</b></summary>
+
+Косметический ключ, позволяющий задать свое метазначение для опций. На позиционные аргументы не влияет.
+
+Пример:
+```yaml
+arg:
+  default: 42
+  metavar: MY_METAVAR
+```
+
+Отображение:
+```
+usage: test [--arg MY_METAVAR] [-h]
+
+options:
+  --arg MY_METAVAR  (default: '42')
+  -h, --help        show this help message and exit
+
+```
+
+</details>
+
+<details>
+  <summary><b>multiple</b></summary>
+
+Определяет, может ли аргумент принимать множественные значения, или нет. По умолчанию `false`. Пример:
+
+```yaml
+  arg:
+    multiple: true
+```
+
+</details>
+
+<details>
   <summary><b>replacer</b></summary>
 
 Содержит строку, котороя будет заменятья в коде скрипта (ключ `script`) на значение аргумента. Не самое элегантное решение, но позволяет творить интересные трюки в комбинации с `mode: format`.
@@ -635,25 +691,29 @@ script: >-
 </details>
 
 <details>
-  <summary><b>multiple</b></summary>
+  <summary><b>regex</b></summary>
 
-Определяет, может ли аргумент принимать множественные значения, или нет. По умолчанию `false`. Пример:
+Позволяет задать регулярное выражение, с помощью которого будут проверяться значения аргумента. Не прошедие проверку значения будут вызывать ошибку и не позволять запустить скрипт. Для проверки используется функция `re.fullmatch`
+
+Пример:
 
 ```yaml
-  arg:
-    multiple: true
+arguments:
+  ip:
+    regex: >-
+      ((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3,3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])
+
+script: 'echo #ip# is ok'
 ```
 
-</details>
+Реакция скрипта на ввод:
 
-<details>
-  <summary><b>description</b></summary>
+```
+$ bashmator use ip 77.88.55.60
+77.88.55.60 is ok
 
-Содержит описание назначения аргумента, которое будет выведено при вызове помощи `use <script name> -h` или `use <script name> --help`. Пример:
-
-```yaml
-  arg:
-    description: очень важный аргумент
+$ bashmator use ip 77.88.55.601
+ip: error: argument 'ip': invalid value '77.88.55.601'
 ```
 
 </details>
@@ -671,18 +731,20 @@ script: >-
 
 ```yaml
 mode:
-  loop: arg1
-  join:
-    arg2: ','
-    arg3: ';'
-  format: 
-    arg1: '{0!r}'
   readfile:
     - arg2
   replace:
     arg3:
-      val1: value1
-      val2: value2
+      v1: value1
+      v2: value2
+  loop: arg1
+  format: 
+    arg2: '{0!r}'
+  join:
+    arg2: ','
+    arg3: ';'
+  pformat:
+    arg2: ' [ {} ] '
 ```
 
 Ключи mode:
@@ -692,104 +754,11 @@ mode:
 <td>
 
 <details>
-  <summary><b>loop</b></summary>
-
-Если содержит имя множественного аргумента (`multiply: true`), то скрипт будет запускаться отдельно для каждого его значения. По умолчанию этого не происходит.
-
-Пример:
-
-```yaml
-shell: bash
-arguments:
-  arg1:
-    multiple: true
-mode:
-  loop: arg1
-script: >-
-  echo -n #arg1#; echo ' end'
-```
-
-Результат выполнения скрипта c аргументами `1 2 3 4 5`:
-
-```
-1 end
-2 end
-3 end
-4 end
-5 end
-```
-
-</details>
-
-<details>
-  <summary><b>join</b></summary>
-
-Содержит имена множественных аргументов (`multiply: true`) в качестве ключей и строки-разделители для объединения в качестве значений. По умолчанию объединение значений множественных аргументов происходит через пробел.
-
-Пример:
-
-```yaml
-  join:
-    arg1: ','
-```
-
-В этом случае значения множественного аргумента `arg1` будут подставлены в скрипт в виде следующей строки:
-
-```
-val1,val2,val3,val4
-```
-
-</details>
-
-<details>
-  <summary><b>format</b></summary>
-
-Содержит имена аргументов в качестве ключей и шаблоны python функции `.format()` в качестве значений. Если значение аргумента пусто, то форматирование не происходит и соответсвующий реплейсер удаляется из скрипта.
-
-Для множественных аргументов форматирование производится для каждого из значений отдельно. Операция `join` всегда происходит после.
-
-Обычно этот ключ применяется для правильной подстановки неоднозначных значений с использованием шаблона `{0!r}`, однако в комбинации с пустыми по умолчанию аргументами может позволить опционально вставлять в скрипт дополнительные куски.
-
-Пример:
-
-```yaml
-shell: bash
-arguments:
-  arg1:
-    default:
-      -
-  arg2:
-    multiple: true
-mode:
-  format:
-    arg1: >-
-      | tee {0!r}
-    arg2: >-
-      {0!r}
-script: >-
-  echo #arg1# #arg2#
-```
-
-Если запустить скрипт с аргументами `a d c r t`, для исполнения будет сформирован следующий код:
-
-```bash
-echo 'a' 'd' 'c' 'r' 't' 
-```
-
-Если с аргументами `--arg1 ./file.txt a d c r t`:
-
-```bash
-echo 'a' 'd' 'c' 'r' 't' | tee './test.txt'
-```
-
-</details>
-
-<details>
   <summary><b>readfile</b></summary>
 
 Содержит список имен аргументов, которые будут интерпритированы как имена файлов.
 
-Данные файлы будут читаться построчно, а считанные строки будут подставляться в скрипт на местро реплейсера.
+Данные файлы будут читаться построчно, а считанные строки будут подставляться в скрипт на место реплейсера.
 
 Пример:
 
@@ -846,6 +815,106 @@ script: >-
 ```
 
 В данном примере, когда на вход скрпта в аргумент `--arg1` будет подаваться значение `A`, в скрипт будет подставлено значение `One`, а когда `B` - `Two`. Значение `C` заменено не будет и попадет в скрипт напрямую.
+
+</details>
+
+<details>
+  <summary><b>loop</b></summary>
+
+Если содержит имя множественного аргумента (`multiply: true`), то скрипт будет запускаться отдельно для каждого его значения. По умолчанию этого не происходит.
+
+Пример:
+
+```yaml
+shell: bash
+arguments:
+  arg1:
+    multiple: true
+mode:
+  loop: arg1
+script: >-
+  echo -n #arg1#; echo ' end'
+```
+
+Результат выполнения скрипта c аргументами `1 2 3 4 5`:
+
+```
+1 end
+2 end
+3 end
+4 end
+5 end
+```
+
+</details>
+
+<details>
+  <summary><b>format</b></summary>
+
+Содержит имена аргументов в качестве ключей и шаблоны python функции `.format()` в качестве значений. Если значение аргумента пусто, то форматирование не происходит и соответсвующий реплейсер удаляется из скрипта.
+
+Для множественных аргументов форматирование производится для каждого из значений отдельно. Операция `join` всегда происходит после.
+
+Обычно этот ключ применяется для правильной подстановки неоднозначных значений с использованием шаблона `{0!r}`, однако в комбинации с пустыми по умолчанию аргументами может позволить опционально вставлять в скрипт дополнительные куски.
+
+Пример:
+
+```yaml
+shell: bash
+arguments:
+  arg1:
+    default:
+      -
+  arg2:
+    multiple: true
+mode:
+  format:
+    arg1: >-
+      | tee {0!r}
+    arg2: >-
+      {0!r}
+script: >-
+  echo #arg1# #arg2#
+```
+
+Если запустить скрипт с аргументами `a d c r t`, для исполнения будет сформирован следующий код:
+
+```bash
+echo 'a' 'd' 'c' 'r' 't' 
+```
+
+Если с аргументами `--arg1 ./file.txt a d c r t`:
+
+```bash
+echo 'a' 'd' 'c' 'r' 't' | tee './test.txt'
+```
+
+</details>
+
+<details>
+  <summary><b>join</b></summary>
+
+Содержит имена множественных аргументов (`multiply: true`) в качестве ключей и строки-разделители для объединения в качестве значений. По умолчанию объединение значений множественных аргументов происходит через пробел.
+
+Пример:
+
+```yaml
+  join:
+    arg1: ','
+```
+
+В этом случае значения множественного аргумента `arg1` будут подставлены в скрипт в виде следующей строки:
+
+```
+val1,val2,val3,val4
+```
+
+</details>
+
+<details>
+  <summary><b>pformat</b></summary>
+
+Тоже что и `format`, но отрабатывает после всех других модов. Полезен при обработке множественных аргументов без режима `loop`, позволяя дополнительно форматировать собранную с помощью `format` и `join` строку перед вставкой в код скрипта.
 
 </details>
 
@@ -1052,7 +1121,9 @@ Search results:
  examples/args/default        | OK       | help, manual, arguments
  examples/args/default_empty  | OK       | help, manual, arguments
  examples/args/flag           | OK       | help, manual, arguments
+ examples/args/metavar        | OK       | help, manual, arguments
  examples/args/multiple       | OK       | help, manual, arguments
+ examples/args/regex          | OK       | help, manual, arguments
  examples/args/replacer       | OK       | help, manual, arguments
  examples/args/simple         | OK       | help, manual, arguments
  examples/files/replacer      | OK       | help, manual, files
@@ -1066,6 +1137,7 @@ Search results:
  examples/mode/format_empty   | OK       | help, manual, mode
  examples/mode/join           | OK       | help, manual, mode
  examples/mode/loop           | OK       | help, manual, mode
+ examples/mode/pformat        | OK       | help, manual, mode
  examples/mode/readfile       | OK       | help, manual, mode
  examples/mode/replace        | OK       | help, manual, mode
  examples/simple              | OK       | help, manual, informational

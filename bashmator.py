@@ -3,6 +3,7 @@
 
 import os.path
 import argparse
+import sys
 #from sys import version_info
 from appdirs import user_config_dir
 from colorama import deinit as colorama_deinit
@@ -12,7 +13,7 @@ from bones.yamlscript import YamlScript
 from bones.library import Library
 from bones.config import Configuration
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __programm_location__ = os.path.dirname(os.path.realpath(__file__))
 __default_lib_path__ = os.path.join(__programm_location__,'library')
 __config_location__ = user_config_dir('bashmator')
@@ -108,7 +109,7 @@ def command_search(allargs):
 def command_config(allargs):
     if not allargs.lib_autoupdate and not allargs.bshm_color:# and allargs.reset_settings:
         bshm_config_parcer.print_usage()
-        print('set: error: requires at least one of the arguments')
+        msg.myprint('set: error: requires at least one of the arguments')
     else:
         #if allargs.reset_settings:
         if allargs.lib_autoupdate: settings_json.set_settings_bool('auto-scan', allargs.lib_autoupdate)
@@ -338,7 +339,8 @@ if __name__ == "__main__":
         allargs.func(allargs)
 
     except KeyboardInterrupt: 
-        quit(0)
+        sys.exit(msg.exit_code)
     finally:
         settings_json.save_changes()   
         colorama_deinit()
+        sys.exit(msg.exit_code)

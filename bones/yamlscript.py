@@ -233,7 +233,7 @@ class YamlScript:
         if self.has_files:
             files_table = [['path', 'status', 'description']]
             for key in sorted(self.files_dict.keys()):
-                files_table.append([self.files_dict[key].get('full_path',''),
+                files_table.append([self.files_dict[key].get('path',''),
                 self.files_dict[key].get('status',''),
                 self.files_dict[key].get('description','')])
             self.files_table_parced = f'{self.msg.c("used files", "_B")}:\n{self.msg.make_table(files_table)}'

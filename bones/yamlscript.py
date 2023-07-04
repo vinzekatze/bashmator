@@ -331,6 +331,7 @@ class YamlScript:
                 options.add_argument(arg_option_name,
                                      dest=str(arg),
                                      help=help_text + f' (default: \'{def_val}\')',
+                                     metavar=None if arg_metavar == 'VAL' else arg_metavar,
                                      required=False,
                                      default=[def_val],
                                      choices=[str(x) for x in choice_list],
@@ -339,6 +340,7 @@ class YamlScript:
             elif not choice_list[0]:
                 required.add_argument(arg_full_name,
                                      help=help_text,
+                                     metavar=None if arg_metavar == 'VAL' else arg_metavar,
                                      choices=[str(x) for x in choice_list[1:]],
                                      nargs='+' if multiple else 1
                                      )
@@ -400,6 +402,7 @@ class YamlScript:
                 options.add_argument(arg_option_name,
                                      dest=str(arg),
                                      help=help_text + f' (default: \'{def_val}\')',
+                                     metavar=None if arg_metavar == 'VAL' else arg_metavar,
                                      required=False,
                                      default=[def_val],
                                      choices=[str(x) for x in choice_list],
@@ -409,6 +412,7 @@ class YamlScript:
                 required.add_argument(arg_option_name,
                                       dest=str(arg),
                                       help=help_text,
+                                      metavar=None if arg_metavar == 'VAL' else arg_metavar,
                                       required=True,
                                       choices=[str(x) for x in choice_list[1:]],
                                       nargs='+' if multiple else 1

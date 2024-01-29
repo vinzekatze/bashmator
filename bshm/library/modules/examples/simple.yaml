@@ -1,0 +1,13 @@
+author: demo
+description: |-
+  Example of information keys
+tags:
+  - help
+  - manual
+  - informational
+install: >-
+  # No installations is needed
+
+shell: bash
+script: >-
+  whoami

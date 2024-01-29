@@ -1,0 +1,14 @@
+author: demo
+description: |-
+  Example of simple items
+tags:
+  - help
+  - manual
+  - items
+shell: bash
+item_1:
+  description: run whoami command
+  script: whoami
+item_2:
+  description: run hostname command
+  script: hostname

@@ -1,0 +1,15 @@
+author: demo
+description: |-
+  Example of simple items with different shells
+tags:
+  - help
+  - manual
+  - items
+shell: bash
+item_1:
+  description: run whoami command
+  script: whoami
+item_2:
+  shell: python3
+  description: run python script
+  script: print('Hello World')

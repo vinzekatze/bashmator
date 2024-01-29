@@ -1,0 +1,3 @@
+# Only two keys are really required:
+shell: bash
+script: whoami

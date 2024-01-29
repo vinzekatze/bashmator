@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="static/bashmator.png" alt="bshm" width="500px">
+  <img src="https://raw.githubusercontent.com/vinzekatze/bashmator/main/static/bashmator.png" alt="bshm" width="500px">
   <br>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/github/release/vinzekatze/bashmator?style=flat-square"></a>
   <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg?style=flat-square&logo=python"></a>
@@ -16,7 +16,7 @@ __Bashmator__ - консольный менеджер скриптов, осно
 # Как это работает
 
 <div align="center">
-  <img src="static/how_it_works.png" alt="bshm" width="1000px">
+  <img src="https://raw.githubusercontent.com/vinzekatze/bashmator/main/static/how_it_works.png" alt="bshm" width="1000px">
 </div>
 
 Каждый скрипт вносится в YAML файл. В этом файле с помощью ключей задаются аргументы командной строки, параметры подстановки их значений в код скрипта, используемая оболочка, а также информация, по которой этот скрипт можно будет найти.
@@ -26,49 +26,15 @@ YAML файлы хранятся в папке (библиотеке). Для к
 # Установка
 
 ```
-git clone https://github.com/vinzekatze/bashmator
-cd ./bashmator
-pip install -r requirements.txt
+pip install bashmator
 ```
+В комадной строке станет доступен под короткими названиям `bashmator` и `bshm`.
 
-<details>
-  <summary><b>Linux/MacOS</b></summary>
-
-Добавить оболочку bash и отсканировать библиотеку:
-
+Далее рекомендуется добавить оболочку и пересканить библиотеку:
 ```
-./bashmator.py shell add /usr/bin/bash
-./bashmator.py library scan -f
+bashmator shell add /usr/bin/bash
+bashmator library scan -f
 ```
-
-Добавить в PATH можно, например, так:
-
-```
-sudo ln -s $(pwd)/bashmator.py /usr/local/bin/bashmator
-sudo ln -s $(pwd)/bashmator.py /usr/local/bin/bshm
-```
-
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
->⚠️ _Пока-что во встроенной библиотеке присутствуют только скрипты для bash._
-
-Добавить оболочку powershell (измените `--encoding`, если отличается. Нужен для нормальной работы в режиме логирования):
-
-```
-./bashmator.py shell add C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe --popen-args "['-Command']" --encoding 'cp866' --name powershell
-```
-
-Чтобы обеспечить запуск программы по короткому имени из powershell пока что не нашел ничего проще, чем добавить в PATH файл `bashmator.bat` со следующим содержимым:
-
-```
-@echo off
-python C:\...your\path...\bashmator.py %*
-``` 
-
-</details>
 
 # Использование
 
@@ -1213,4 +1179,4 @@ Input: blablabla
 
 # Доступные библиотеки
 
-Пока что могу предложить только свою [ktz-autokali](https://github.com/vinzekatze/ktz-autokali), слабо адаптированную под новую версию 😢
+Потихоньку веду коллекцию сомнительных скриптов для Kali-Linux [ktz-autokali](https://github.com/vinzekatze/ktz-autokali)

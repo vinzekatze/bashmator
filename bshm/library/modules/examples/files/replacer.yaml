@@ -1,0 +1,14 @@
+author: demo
+description: |-
+  Example of using library files with custom replacer
+tags:
+  - help
+  - manual
+  - files
+file_1:
+  path: lorem/lorem.txt
+  description: Lorem ipsum dolor
+  replacer: ++LOREM-FILE++
+shell: bash
+script: >-
+  cat ++LOREM-FILE++

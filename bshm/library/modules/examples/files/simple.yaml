@@ -1,0 +1,13 @@
+author: demo
+description: |-
+  Example of using library files
+tags:
+  - help
+  - manual
+  - files
+file_1:
+  path: lorem/lorem.txt
+  description: Lorem ipsum dolor
+shell: bash
+script: >-
+  cat #file_1#

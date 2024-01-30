@@ -1,5 +1,6 @@
 .DS_Store
-__pycache__/
+bshm/bones/__pycache__
 *.py[cod]
 *$py.class
 tests/
+dist/

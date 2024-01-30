@@ -377,7 +377,7 @@ bashmator shell add C:\...path\to\python\...\python.exe --name python3
 
 ```
 bashmator library add <path to library>
-bashmator library use <lirary name>
+bashmator library use <library name>
 ```
 
 # Создание YAML модулей
@@ -1074,7 +1074,7 @@ item_2:
 </details>
 
 
-Примеры YAML модулей представлены во [встроенной библиотеке](library/modules/examples):
+Примеры YAML модулей представлены во [встроенной библиотеке](https://github.com/vinzekatze/bashmator/tree/main/bshm/library/modules/examples):
 
 ```
 $ bashmator search examples
@@ -1110,7 +1110,7 @@ Search results:
 ```
 
 # Пример работы
-Ниже представлен пример запуска скрипта [examples/args/simple](library/modules/examples/args/simple.yaml):
+Ниже представлен пример запуска скрипта [examples/args/simple](https://github.com/vinzekatze/bashmator/blob/main/bshm/library/modules/examples/simple.yaml):
 
 <details>
   <summary>Аргументы командной строки, сгенерированные из YAML</summary>

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bashmator"
-version = "1.1.7"
+version = "1.1.8"
 description = "Console script manager based on YAML format"
 authors = ["vinzekatze <vinzekatze@gmail.com>"]
 license = "MIT"

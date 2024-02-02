@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/vinzekatze/bashmator/main/static/bashmator.png" alt="bshm" width="500px">
   <br>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/github/release/vinzekatze/bashmator?style=flat-square"></a>
-  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg?style=flat-square&logo=python"></a>
+  <a href="http://www.python.org/download/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg?style=flat-square&logo=python"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/linux-✔️-green.svg?style=flat-square&logo=linux&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/macos-✔️-green.svg?style=flat-square&logo=macos&logoColor=white"></a>
   <a href="https://github.com/vinzekatze/bashmator"><img src="https://img.shields.io/badge/win-✔️%20%5Bnot%20tested%20enough%5D-orange.svg?style=flat-square&logo=windows"></a>
@@ -26,7 +26,7 @@ YAML файлы хранятся в папке (библиотеке). Для к
 # Установка
 
 ```
-pip install bashmator
+pip install --upgrade bashmator
 ```
 В комадной строке станет доступен под короткими названиям `bashmator` и `bshm`.
 

@@ -14,7 +14,7 @@ from bshm.bones.library import Library
 from bshm.bones.config import Configuration
 
 def main():
-    __version__ = "1.1.7"
+    __version__ = "1.1.8"
     __programm_location__ = os.path.dirname(os.path.realpath(__file__))
     __default_lib_path__ = os.path.join(__programm_location__,'library')
     __config_location__ = user_config_dir('bashmator')

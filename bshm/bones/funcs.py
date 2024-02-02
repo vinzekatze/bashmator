@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from bshm.bones.msg import style_line, style_line2
 
 
@@ -13,11 +13,7 @@ def make_lines(text):
     return (s1+s2+s3)
 
 def get_local_time():
-    now = datetime.datetime.now(datetime.timezone.utc)
-    form_now = now.strftime("%Y-%m-%d %H:%M:%S")
-    local_tz = datetime.timezone.utc
-    out=f'{form_now} ({local_tz})'
-    return(out)
+    return(datetime.now().astimezone())
 
 def get_code_print_header(shell: str, item: int):
     s1 = style_line2

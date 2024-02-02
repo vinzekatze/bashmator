@@ -13,7 +13,7 @@ from bshm.bones.funcs import none_controll, make_range
 from bshm.bones.funcs import get_main_header, get_local_time, get_code_log, get_alt_code_cog, get_log_header, get_log_end, get_code_print_header
 from bshm.bones.validate import YamlValidator, re_compile
 
-breaker_time = 1
+breaker_time = 2
 
 class YamlScript:
     def __shell_collector__(self, item: int, shell: str):
@@ -155,7 +155,7 @@ class YamlScript:
         self.has_main_script = False
         self.has_files = False
         self.only_fags_mode = False
-        self.interrupt_time = time()
+        self.interrupt_time = time() - 2*breaker_time
         self.interrupt_count = 0
         # Параметры аргументов
         self.items_launch_set = [0]
@@ -500,6 +500,18 @@ class YamlScript:
         headerstr += get_log_header()
         return headerstr
 
+    def __keyboard_interrupt_stoper__(self):
+        out = False
+        if time() - self.interrupt_time < breaker_time:
+            self.interrupt_count += 1
+        else:
+            self.interrupt_count = 0
+            self.interrupt_time = time()
+            self.msg.warning('Interrupted by user', 'Script execution was interrupted. Press 3 times to abort completely.')
+        if self.interrupt_count > 2:
+            out = True
+        return(out)
+
     def execute(self, show_log: bool, popen_cmd: list,  item: int, new_log=True, last_log=True):
         if show_log:
             headerstr = self.__build_log_header__(script=popen_cmd[-1], shell=' '.join(popen_cmd[:-1]), item=item, new_log=new_log)
@@ -511,12 +523,7 @@ class YamlScript:
             self.msg.warning_file(' '.join(popen_cmd[:-1]))
             sys.exit(1)
         except KeyboardInterrupt:
-            if time() - self.interrupt_time < breaker_time:
-                self.interrupt_count += 1
-            else:
-                self.interrupt_count = 0
-                self.interrupt_time = time()
-            if self.interrupt_count > 2:
+            if self.__keyboard_interrupt_stoper__():
                 raise
         finally: 
             if show_log:
@@ -547,12 +554,7 @@ class YamlScript:
                     self.msg.warning_file(' '.join(popen_cmd[:-1]))
                     sys.exit(1)
                 except KeyboardInterrupt:
-                    if time() - self.interrupt_time < breaker_time:
-                        self.interrupt_count += 1
-                    else:
-                        self.interrupt_count = 0
-                        self.interrupt_time = time()
-                    if self.interrupt_count > 2:
+                    if self.__keyboard_interrupt_stoper__():
                         raise
                 finally:
                     # Запись и отображение последнего заголовка логера

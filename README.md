@@ -1178,5 +1178,6 @@ Input: blablabla
 </details>
 
 # Доступные библиотеки
-
-Потихоньку веду коллекцию сомнительных скриптов для Kali-Linux [ktz-autokali](https://github.com/vinzekatze/ktz-autokali)
+Общего назначения для kali linux:
+- [ktz-autokali](https://github.com/vinzekatze/ktz-autokali)
+- [toolscape](https://github.com/Kraus17th/toolscape) by [Kraus17th](https://github.com/Kraus17th)

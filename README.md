@@ -24,9 +24,9 @@ __Bashmator__ - консольный менеджер скриптов, осно
 YAML файлы хранятся в папке (библиотеке). Для каждой библиотеки bashmator собирает необходимую информацию о доступных скриптах и поддерживает её актуальность, чтобы обеспечить возможность быстрого поиска.
 
 # Установка
-
-```
-pip install --upgrade bashmator
+Устанавливать bashmator рекомендуется через pipx. Пример:
+```bash
+sudo pipx install bashmator --global
 ```
 В комадной строке станет доступен под короткими названиям `bashmator` и `bshm`.
 
@@ -54,7 +54,7 @@ usage: bashmator [-h] [-v] {use,search,set,shell,library} ...
    | . | .'|_ -|   |     | .'|  _| . |  _|> >\__ \
    |___|__,|___|_|_|_|_|_|__,|_| |___|_| / / (   /
     by vinzekatze                       /_/   |_| 
-    version 1.0.0
+    version 1.1.9
     
 .................................................................
 
@@ -726,6 +726,8 @@ mode:
 
 Данные файлы будут читаться построчно, а считанные строки будут подставляться в скрипт на место реплейсера.
 
+Если файла не существует, то будет подставлено входящиее значение аргумента.
+
 Пример:
 
 ```yaml
@@ -955,6 +957,9 @@ file_2:
   description: My Big Script
   path: scripts/big_script.sh
   replacer: __BIG_SCRIPT__
+  quote:
+    - '"'
+    - '\'
 ```
 
 Ключи file_\[NUMBER\]:
@@ -988,7 +993,29 @@ file_1:
 <details>
   <summary><b>description</b></summary>
 
-Содержит краткое описание файла, которое будет выведено при вызове помощи `use <script name> -h` или `use <script name> --help`. Пример:
+Содержит краткое описание файла, которое будет выведено при вызове помощи `use <script name> -h` или `use <script name> --help`.
+
+</details>
+
+<details>
+  <summary><b>quote</b></summary>
+
+При наличии использует первый символ из списка для заковычивания пути, а второй - для экранирования аналогичного символа, если он в изначальном пути содержится.
+
+Пример:
+```yaml
+file_1:
+  path: "lorem folder/lorem'.txt"
+  quote:
+    - "'"
+    - '\'
+```
+
+При выполнении подставит следующую строку:
+```
+'/<library path>/lorem folder/lorem\'.txt'
+```
+
 
 </details>
 
@@ -1181,3 +1208,6 @@ Input: blablabla
 Общего назначения для kali linux:
 - [ktz-autokali](https://github.com/vinzekatze/ktz-autokali)
 - [toolscape](https://github.com/Kraus17th/toolscape) by [Kraus17th](https://github.com/Kraus17th)
+
+Тестирование WiFi для kali linux на Raspberry Pi 4:
+- [wless-gun](https://github.com/vinzekatze/wless-gun)

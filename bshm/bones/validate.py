@@ -168,7 +168,29 @@ class YamlValidator:
                                            f'Invalid key value at \'{key}\'',
                                            f'Value of the \'{self.msg.c("description", "_B")}\' key must be a string.',
                                            last_check) and out
-            self.mark_unknowns(['path', 'replacer', 'description'], content, f'\'{key}\'')
+            # проверка quote
+            quote_error_msg = f'The key \'{self.msg.c("quote", "_B")}\' must contain a list of 2 string values: quote symbol and escape character for it'
+            out = self.check_value(content.get('quote', None),
+                                           [list],
+                                           True,
+                                           f'Invalid key value at \'{key}\'',
+                                           quote_error_msg,
+                                           last_check) and out
+            quote_content = content.get('quote', None)
+            if quote_content:
+                if len(quote_content) != 2:
+                    out = False
+                    self.call_yaml_error(f'Invalid key value at \'{key}\'', quote_error_msg)
+                else:
+                    for i in quote_content:
+                        out = self.check_value(i,
+                                            [str],
+                                            True,
+                                            f'Invalid key value at \'{key}\'',
+                                            quote_error_msg,
+                                            last_check) and out
+            
+            self.mark_unknowns(['path', 'replacer', 'description', 'quote'], content, f'\'{key}\'')
         return out
 
 

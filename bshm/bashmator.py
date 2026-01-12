@@ -14,7 +14,7 @@ from bshm.bones.library import Library
 from bshm.bones.config import Configuration
 
 def main():
-    __version__ = "1.1.8"
+    __version__ = "1.1.9"
     __programm_location__ = os.path.dirname(os.path.realpath(__file__))
     __default_lib_path__ = os.path.join(__programm_location__,'library')
     __config_location__ = user_config_dir('bashmator')
@@ -53,15 +53,15 @@ def main():
             mainlib.check_changes()
             mainlib.update_lib()
         
-        if allargs.script_name in mainlib.data.keys():
-            used_script = YamlScript(path=mainlib.data[allargs.script_name]['path'], 
-                                    name=allargs.script_name, 
+        def runscript(script_name):
+            used_script = YamlScript(path=mainlib.data[script_name]['path'], 
+                                    name=script_name, 
                                     library_files_path=mainlib.files_path, 
                                     bshm_version=__version__,
                                     known_shells=settings_json.shell_dict,
                                     msg=settings_json.msg,
                                     auto_scan=settings_json.auto_scan,
-                                    status_from_lib=mainlib.data.get(allargs.script_name,{}).get('status', ''),
+                                    status_from_lib=mainlib.data.get(script_name,{}).get('status', ''),
                                     library_name=settings_json.used_library)
             # Флаг install
             if allargs.install:
@@ -73,10 +73,16 @@ def main():
                                         script_name=allargs.script_name,
                                         script_args=allargs.options,
                                         code_print=allargs.print)
+
+        if allargs.script_name in mainlib.data.keys():
+            runscript(allargs.script_name)
         # Поиск, если запрашиваемый скрипт не найден
         elif allargs.script_name:
             founds = mainlib.search([], [allargs.script_name], ['status'], True)
-            if len(founds):
+            if len(founds) == 2:
+                print(f'Script "{founds[1][0]}" was used as the only one that matched\n')
+                runscript(founds[1][0])
+            elif len(founds) > 2:
                 print(f'Script "{allargs.script_name}" not found. Search results:\n')
                 print(msg.make_table(founds))
             else:

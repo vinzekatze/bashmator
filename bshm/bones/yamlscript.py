@@ -103,7 +103,8 @@ class YamlScript:
                 file_content = content.get(key,{})
                 self.files_dict.update({int(key[5:]): {'path': file_content.get('path', ''),
                                                        'replacer': file_content.get('replacer', f'{self.default_replacer}{key}{self.default_replacer}'),
-                                                       'description': file_content.get('description', '')}})
+                                                       'description': file_content.get('description', ''),
+                                                       'quote': file_content.get('quote', ['', ''])}})
                 self.has_files = True
         
         # Проверка файлов
@@ -488,7 +489,13 @@ class YamlScript:
             for key in self.arguments.keys():
                 out = out.replace(self.arguments[key]['replacer'], arg_values[key])
             for key in self.files_dict.keys():
-                out = out.replace(self.files_dict[key]['replacer'], self.files_dict[key]['full_path'])
+                quote_char = self.files_dict[key]['quote'][0]
+                qoute_escape = self.files_dict[key]['quote'][1]
+                if quote_char and qoute_escape:
+                    full_path_quoted = self.files_dict[key]['full_path'].replace(quote_char, f'{qoute_escape}{quote_char}')
+                else:
+                    full_path_quoted = self.files_dict[key]['full_path']
+                out = out.replace(self.files_dict[key]['replacer'], f'{quote_char}{full_path_quoted}{quote_char}')
             return out
     
     def __build_log_header__(self, script: str, shell: str, item: int, new_log):
@@ -594,9 +601,11 @@ class YamlScript:
                             lines_from_file = file.read().splitlines()
                         preout.extend(lines_from_file)
                     except Exception as errormsg:
-                        self.msg.myprint('{}: error: argument {}: {}'.format(self.name, f'\'{arg}\'', errormsg))
-                        self.msg.exit_code = 1
-                        self.flow_status = False
+                        preout.append(file)
+                        # Раньше это вызывало ошибку, теперь добавляет нечитаемое в список аргументов. так практичнее
+                        #self.msg.myprint('{}: error: argument {}: {}'.format(self.name, f'\'{arg}\'', errormsg))
+                        #self.msg.exit_code = 1
+                        #self.flow_status = False
         else:
             preout = vars(self.parsed_args)[arg]
 
